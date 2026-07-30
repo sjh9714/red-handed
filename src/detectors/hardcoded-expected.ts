@@ -84,7 +84,14 @@ export const hardcodedExpected: Detector = {
                 ts: run.ts,
                 kind: "test-output",
                 uuid: run.uuid,
-                excerpt: `${run.testRun?.summaryLine ?? "test failed"} — expected ${expected}, received ${received}`,
+                excerpt: run.testRun?.summaryLine ?? excerpt(run.command),
+              },
+              {
+                ts: run.ts,
+                kind: "note",
+                excerpt: `expected ${expected}, received ${received}`,
+                noteKey: "note.expected-received",
+                noteVars: { expected, received },
               },
               editEvidence(
                 action,
@@ -95,6 +102,7 @@ export const hardcodedExpected: Detector = {
                 ts: action.ts,
                 kind: "note",
                 excerpt: "no implementation file was changed between the failure and this edit",
+                noteKey: "note.no-impl-change",
               },
             ],
             stillPresent: true,
@@ -104,7 +112,6 @@ export const hardcodedExpected: Detector = {
       }
     }
 
-    void excerpt;
     return findings;
   },
 };

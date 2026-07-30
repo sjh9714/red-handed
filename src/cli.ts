@@ -225,7 +225,7 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
   }
 
   if (args.command === "demo") {
-    const report = await demo();
+    const report = await demo(lang);
     if (args.format === "terminal") {
       io.out(`\n  ${resolveLocale(lang).ui.demoNote}\n`);
     }

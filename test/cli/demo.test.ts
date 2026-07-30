@@ -39,4 +39,12 @@ describe("red-handed demo", () => {
   test("exits non-zero, the way it would on a real repository", async () => {
     expect((await runDemo()).code).toBe(1);
   });
+
+  test("the made-up agent speaks Korean in the Korean demo", async () => {
+    const { out } = await runDemo(["--lang", "ko"]);
+    expect(out).toContain("테스트 34개 전부 통과");
+    expect(out).not.toContain("All 34 tests pass");
+    // The runner's own output stays as a runner prints it.
+    expect(out).toContain("Tests 1 failed | 33 passed");
+  });
 });

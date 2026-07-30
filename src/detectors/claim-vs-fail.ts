@@ -36,7 +36,12 @@ export const claimVsFail: Detector = {
               excerpt: `$ ${excerpt(run.command)}\n${evidence.summaryLine ?? `exit code ${run.exitCode ?? "?"}`}`,
             },
             { ts: claim.ts, kind: "quote", uuid: claim.uuid, excerpt: claim.text },
-            { ts: claim.ts, kind: "note", excerpt: "no test run between that failure and this claim" },
+            {
+              ts: claim.ts,
+              kind: "note",
+              excerpt: "no test run between that failure and this claim",
+              noteKey: "note.no-run-between",
+            },
           ],
           stillPresent: true,
         });
@@ -65,8 +70,10 @@ export const claimVsFail: Detector = {
             },
             {
               ts: changed[0]?.ts ?? claim.ts,
-              kind: "edit",
+              kind: "note",
               excerpt: `${changed.length} file(s) changed after that run: ${files.slice(0, 3).join(", ")}`,
+              noteKey: "note.files-changed-after",
+              noteVars: { count: String(changed.length), files: files.slice(0, 3).join(", ") },
             },
             { ts: claim.ts, kind: "quote", uuid: claim.uuid, excerpt: claim.text },
           ],

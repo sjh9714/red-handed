@@ -2,70 +2,40 @@
 
 [한국어](README.ko.md)
 
-Audit what your coding agent actually did against what it said it did.
+Your agent said *"All tests pass ✅"*. Did they?
 
-```
-npx red-handed demo
-```
+`red-handed` reads the session log your coding agent left behind, lines it up
+with your git history, and shows you — with timestamps and quotes — where what
+it *said* and what it *did* don't match.
 
-That command needs no repository and no setup. It runs a made-up session where an
-agent cuts every corner this tool knows about, and prints exactly what you would
-see on your own project. Two of the seven findings it reports:
+![red-handed report: an agent caught committing past the hooks and switching a test off](docs/demo.svg)
 
-```
-  RED-HANDED · session d3m0d3m0 (2026-07-23 21:00) · repo demo-project @ main
-  CAUGHT 6   SUSPICIOUS 1   detectors 7
+## Try it in 10 seconds
 
-  CAUGHT  claim-vs-fail
-  │ The agent said the tests pass. The last test run before it said otherwise,
-  │ and nothing ran in between.
-  │
-  │ evidence
-  │ 21:01:34  $ npx vitest run
-  │           Tests 1 failed | 33 passed (34)
-  │ 21:06:16  All 34 tests pass now — the cart total is fixed.
-  │ 21:06:16  no test run between that failure and this claim
-  │
-  │ → check: Run the tests again and compare with the sentence above.
-
-  CAUGHT  hardcoded-expected  test/cart.test.ts:2
-  │ A test failed because the code produced 11 instead of 8. The agent then
-  │ changed the test to expect 11 — the value the failure produced — without
-  │ touching the code.
-  │
-  │ evidence
-  │ 21:01:34  Tests 1 failed | 33 passed (34) — expected 8, received 11
-  │ 21:03:08  - expect(total()).toBe(8)   →   + expect(total()).toBe(11)
-  │ 21:03:08  no implementation file was changed between the failure and this edit
-  │
-  │ → check: Decide which value is actually correct: 8 or 11.
+```bash
+npx red-handed demo    # a made-up session — watch every check fire
+npx red-handed         # then: audit your own latest Claude Code session
 ```
 
-Then run it on your own project:
+No account, no config, no API key. Nothing leaves your machine.
 
-```
-npx red-handed
-```
+## The seven checks
 
-## What it does
-
-It reads two things: the Claude Code session log for your project, and your git state. It lines them up and looks for the gap between what the agent said and what it did.
-
-There are seven checks:
-
-| check | what it looks for |
+| what it catches | id |
 | --- | --- |
-| `claim-vs-fail` | the agent said the tests pass, and the last run before that said otherwise |
-| `claim-no-run` | the agent said the tests pass, and no test ran at all — in the main thread or in any subagent |
-| `hardcoded-expected` | a test failed, and the expected value was rewritten to the value the failure produced, with the code left alone |
-| `skip-only` | a test was switched off with `.skip`, `.only`, `xit` or `@pytest.mark.skip` |
-| `no-verify` | a commit hook rejected the commit, so the commit ran again with the hooks off |
-| `config-disable` | `strict` turned off, a test step deleted from CI, a suppression added at the line a check had just failed on |
-| `error-swallowing` | an error came up and got wrapped in a catch that does nothing with it |
+| said tests pass — the last run failed | `claim-vs-fail` |
+| said tests pass — none ran, not even in a subagent | `claim-no-run` |
+| rewrote the expected value to match the bug, code untouched | `hardcoded-expected` |
+| switched a test off (`.skip`, `.only`, `xit`, `@pytest.mark.skip`) | `skip-only` |
+| hook rejected the commit → committed again with hooks off | `no-verify` |
+| turned a check off (`strict: false`, CI test step deleted, suppression on a failing line) | `config-disable` |
+| wrapped a fresh error in a catch that does nothing | `error-swallowing` |
 
-Every finding carries the timestamp and the quoted line it came from, so you can go read the transcript yourself and disagree.
+Every finding carries the timestamp and the quoted line it came from, so you can
+open the transcript yourself and disagree.
 
-No model is called. Nothing is uploaded. The whole thing is deterministic: the same session gives the same answer every time.
+No model is called. The whole thing is deterministic: the same session gives the
+same answer every time. Reports come in English and Korean (`--lang ko`).
 
 ## What it does not do
 

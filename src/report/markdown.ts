@@ -1,5 +1,5 @@
 import type { AuditReport } from "../types.js";
-import { messageFor, resolveLocale } from "./messages.js";
+import { messageFor, noteFor, resolveLocale, titleFor } from "./messages.js";
 
 export interface MarkdownOptions {
   lang?: string;
@@ -30,7 +30,7 @@ export function renderMarkdown(report: AuditReport, options: MarkdownOptions = {
     const message = messageFor(locale, finding.messageKey, finding.messageVars);
     const tier = finding.tier === "CAUGHT" ? locale.ui.caught : locale.ui.suspicious;
     const where = finding.code ? ` — \`${finding.code.file}:${finding.code.line}\`` : "";
-    lines.push(`### ${tier} · ${finding.detector}${where}`);
+    lines.push(`### ${tier} · ${titleFor(locale, finding.detector)}${where}`);
     lines.push("");
     lines.push(message.narrative);
     lines.push("");
@@ -40,7 +40,10 @@ export function renderMarkdown(report: AuditReport, options: MarkdownOptions = {
       lines.push("```");
       for (const item of finding.evidence) {
         const stamp = item.ts === "" ? "" : `${new Date(item.ts).toTimeString().slice(0, 8)}  `;
-        lines.push(`${stamp}${item.excerpt}`);
+        const text = item.noteKey
+          ? noteFor(locale, item.noteKey, item.noteVars ?? {}, item.excerpt)
+          : item.excerpt;
+        lines.push(`${stamp}${text}`);
       }
       lines.push("```");
       lines.push("");

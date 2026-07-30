@@ -23,6 +23,7 @@
   "files": [
     "dist",
     "README.md",
+    "README.ko.md",
     "LICENSE"
   ],
   "engines": {
@@ -33,7 +34,8 @@
     "dev": "node --experimental-strip-types src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "demo:svg": "npm run build && node scripts/render-demo-svg.mjs"
   },
   "dependencies": {
     "picocolors": "^1.1.1"

@@ -47,6 +47,8 @@ export const claimNoRun: Detector = {
             ts: claim.ts,
             kind: "note",
             excerpt: `no test command ran in this session (${commandCount} commands, subagent transcripts included)`,
+            noteKey: "note.no-test-run",
+            noteVars: { commands: String(commandCount) },
           },
         ],
         stillPresent: true,

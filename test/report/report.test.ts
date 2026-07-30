@@ -16,6 +16,12 @@ const caught: Finding = {
   evidence: [
     { ts: "2026-07-23T21:18:43.000Z", kind: "test-output", excerpt: "Tests 1 failed | 33 passed" },
     { ts: "2026-07-23T21:18:59.000Z", kind: "edit", excerpt: "- toBe(8)   →   + toBe(11)" },
+    {
+      ts: "2026-07-23T21:18:59.000Z",
+      kind: "note",
+      excerpt: "no implementation file was changed between the failure and this edit",
+      noteKey: "note.no-impl-change",
+    },
   ],
   stillPresent: true,
 };
@@ -99,9 +105,32 @@ describe("terminal report", () => {
     expect(text).toMatch(/테스트/);
   });
 
+  test("leads each finding with a title in plain words, not the detector id", () => {
+    const text = renderTerminal(report(), { color: false, lang: "en" });
+    expect(text).toContain("rewrote the answer to match the bug");
+    const ko = renderTerminal(report(), { color: false, lang: "ko" });
+    expect(ko).toContain("오답을 정답으로 바꿔치기");
+  });
+
+  test("keeps the detector id visible for --detectors, after the title", () => {
+    const text = renderTerminal(report(), { color: false, lang: "en" });
+    expect(text).toContain("hardcoded-expected");
+  });
+
   test("falls back to English for a language it does not have", () => {
     const text = renderTerminal(report(), { color: false, lang: "fr" });
     expect(text).toMatch(/check/i);
+  });
+
+  test("translates evidence notes, so a Korean report contains no stray English", () => {
+    const ko = renderTerminal(report(), { color: false, lang: "ko" });
+    expect(ko).not.toContain("no implementation file was changed");
+    expect(ko).toContain("구현 코드는 그대로");
+  });
+
+  test("keeps quoted evidence verbatim even in a translated report", () => {
+    const ko = renderTerminal(report(), { color: false, lang: "ko" });
+    expect(ko).toContain("Tests 1 failed | 33 passed");
   });
 });
 

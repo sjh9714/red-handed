@@ -148,7 +148,14 @@ export interface Claim {
 export interface EvidenceItem {
   ts: string;
   kind: "edit" | "command" | "quote" | "test-output" | "todo" | "note";
+  /**
+   * Quoted material stays verbatim — a quote translated is no longer evidence.
+   * For "note" items this is the English fallback; when noteKey is set the
+   * report renders the note in its own language instead.
+   */
   excerpt: string;
+  noteKey?: string;
+  noteVars?: Record<string, string>;
   uuid?: string;
 }
 

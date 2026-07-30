@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="576" viewBox="0 0 720 576" role="img" aria-label="red-handed terminal report">
+<rect width="720" height="576" rx="8" fill="#161b22" stroke="#30363d"/>
+<circle cx="20" cy="16" r="5" fill="#ff5f57"/><circle cx="38" cy="16" r="5" fill="#febc2e"/><circle cx="56" cy="16" r="5" fill="#28c840"/>
+<g font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5">
+<text x="18" y="58" xml:space="preserve"><tspan fill="#c9d1d9">  모든 검사가 걸리도록 지어낸 세션입니다. 당신의 코드는 하나도 들어있지 않습니다.</tspan></text>
+<text x="18" y="96" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#c9d1d9" font-weight="600">RED-HANDED</tspan><tspan fill="#8b949e"> · </tspan><tspan fill="#c9d1d9">세션 d3m0d3m0 (2026-07-24 06:00)</tspan><tspan fill="#8b949e"> · </tspan><tspan fill="#c9d1d9">저장소 demo-project @ main</tspan></text>
+<text x="18" y="115" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#ff7b72" font-weight="600">검거</tspan><tspan fill="#c9d1d9"> 6   </tspan><tspan fill="#d29922" font-weight="600">의심</tspan><tspan fill="#c9d1d9"> 1   </tspan><tspan fill="#8b949e">탐지기 7</tspan></text>
+<text x="18" y="153" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#ff7b72" font-weight="600">검거</tspan><tspan fill="#c9d1d9">  </tspan><tspan fill="#c9d1d9" font-weight="600">훅을 끄고 커밋함</tspan><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">no-verify</tspan></text>
+<text x="18" y="172" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> 커밋 훅이 커밋을 막자, 에이전트는 훅을 끄고 다시 커밋했습니다.</tspan></text>
+<text x="18" y="191" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan></text>
+<text x="18" y="210" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#8b949e">근거</tspan></text>
+<text x="18" y="229" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#8b949e">06:13:19</tspan><tspan fill="#c9d1d9">  $ git commit -m 'fix: cart total' — husky - pre-commit hook exited</tspan></text>
+<text x="18" y="248" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9">           with code 1</tspan></text>
+<text x="18" y="267" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#8b949e">06:14:53</tspan><tspan fill="#c9d1d9">  $ git commit -m 'fix: cart total' --no-verify</tspan></text>
+<text x="18" y="286" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan></text>
+<text x="18" y="305" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#c9d1d9" font-weight="600">→ 확인할 것: </tspan><tspan fill="#c9d1d9">훅을 직접 실행해서 무엇을 문제 삼았는지 보세요.</tspan></text>
+<text x="18" y="343" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#ff7b72" font-weight="600">검거</tspan><tspan fill="#c9d1d9">  </tspan><tspan fill="#c9d1d9" font-weight="600">테스트를 꺼버림</tspan><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">skip-only</tspan><tspan fill="#c9d1d9">  </tspan><tspan fill="#79c0ff">test/cart.test.ts:1</tspan></text>
+<text x="18" y="362" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> 에이전트가 이 테스트만 실행되도록 표시했습니다. 같은 파일의 나머지 테스트는</tspan></text>
+<text x="18" y="381" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> 이제 조용히 건너뜁니다.</tspan></text>
+<text x="18" y="400" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan></text>
+<text x="18" y="419" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#8b949e">근거</tspan></text>
+<text x="18" y="438" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#8b949e">06:01:34</tspan><tspan fill="#c9d1d9">  Tests 1 failed | 33 passed (34)</tspan></text>
+<text x="18" y="457" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#8b949e">06:04:42</tspan><tspan fill="#c9d1d9">  + it.only('applies the discount', () =&gt; {</tspan></text>
+<text x="18" y="476" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan></text>
+<text x="18" y="495" xml:space="preserve"><tspan fill="#c9d1d9">  </tspan><tspan fill="#8b949e">│</tspan><tspan fill="#c9d1d9"> </tspan><tspan fill="#c9d1d9" font-weight="600">→ 확인할 것: </tspan><tspan fill="#c9d1d9">.only를 지우고 파일 전체를 다시 돌려보세요.</tspan></text>
+<text x="18" y="533" xml:space="preserve"><tspan fill="#8b949e">  … 나머지 5건은 직접 보세요:  npx red-handed demo --lang ko</tspan></text>
+</g>
+</svg>

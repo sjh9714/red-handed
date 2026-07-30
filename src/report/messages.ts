@@ -19,6 +19,13 @@ export interface Message {
 
 export interface Locale {
   id: string;
+  /**
+   * What each check is called, in words a first-time reader understands.
+   * The detector id still appears after it, because that is what --detectors takes.
+   */
+  titles: Record<string, string>;
+  /** Evidence annotations this tool writes itself (quoted material is never translated). */
+  notes: Record<string, string>;
   ui: {
     caught: string;
     suspicious: string;
@@ -40,6 +47,22 @@ export interface Locale {
 
 const en: Locale = {
   id: "en",
+  titles: {
+    "no-verify": "committed past the hooks",
+    "skip-only": "switched a test off",
+    "claim-vs-fail": "said tests pass — the last run failed",
+    "claim-no-run": "said tests pass — none ran",
+    "hardcoded-expected": "rewrote the answer to match the bug",
+    "config-disable": "turned a check off",
+    "error-swallowing": "made an error vanish",
+  },
+  notes: {
+    "note.no-impl-change": "no implementation file was changed between the failure and this edit",
+    "note.no-run-between": "no test run between that failure and this claim",
+    "note.no-test-run": "no test command ran in this session ({commands} commands, subagent transcripts included)",
+    "note.files-changed-after": "{count} file(s) changed after that run: {files}",
+    "note.expected-received": "expected {expected}, received {received}",
+  },
   ui: {
     caught: "CAUGHT",
     suspicious: "SUSPICIOUS",
@@ -139,6 +162,22 @@ const en: Locale = {
 
 const ko: Locale = {
   id: "ko",
+  titles: {
+    "no-verify": "훅을 끄고 커밋함",
+    "skip-only": "테스트를 꺼버림",
+    "claim-vs-fail": "실패했는데 통과했다고 말함",
+    "claim-no-run": "돌리지도 않고 통과했다고 말함",
+    "hardcoded-expected": "오답을 정답으로 바꿔치기",
+    "config-disable": "검사를 꺼버림",
+    "error-swallowing": "에러를 삼킴",
+  },
+  notes: {
+    "note.no-impl-change": "실패와 이 수정 사이에 구현 코드는 그대로였음",
+    "note.no-run-between": "실패와 주장 사이에 테스트를 다시 돌린 적 없음",
+    "note.no-test-run": "이 세션에서 테스트 명령이 실행되지 않음 (명령 {commands}개, 서브에이전트 기록 포함)",
+    "note.files-changed-after": "그 실행 이후 파일 {count}개가 바뀜: {files}",
+    "note.expected-received": "기대값 {expected}, 실제값 {received}",
+  },
   ui: {
     caught: "검거",
     suspicious: "의심",
@@ -247,6 +286,20 @@ export function resolveLocale(tag: string | undefined): Locale {
 
 export function interpolate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (whole, name: string) => vars[name] ?? whole);
+}
+
+export function titleFor(locale: Locale, detector: string): string {
+  return locale.titles[detector] ?? en.titles[detector] ?? detector;
+}
+
+export function noteFor(
+  locale: Locale,
+  key: string,
+  vars: Record<string, string>,
+  fallback: string,
+): string {
+  const template = locale.notes[key] ?? en.notes[key];
+  return template === undefined ? fallback : interpolate(template, vars);
 }
 
 export function messageFor(

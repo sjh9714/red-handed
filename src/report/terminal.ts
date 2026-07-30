@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import type { AuditReport, EvidenceItem, Finding } from "../types.js";
-import { messageFor, resolveLocale, type Locale } from "./messages.js";
+import { messageFor, noteFor, resolveLocale, titleFor, type Locale } from "./messages.js";
 import { displayWidth, wrapText } from "./width.js";
 
 export interface TerminalOptions {
@@ -18,11 +18,13 @@ function time(ts: string): string {
   return date.toTimeString().slice(0, 8);
 }
 
+/** Local time, like every other timestamp in the report. */
 function shortDate(ts: string | undefined): string {
   if (!ts) return "";
   const date = new Date(ts);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 16).replace("T", " ");
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 interface Paint {
@@ -64,8 +66,9 @@ function renderFinding(
   const where = finding.code ? `${finding.code.file}:${finding.code.line}` : "";
 
   const lines: string[] = [];
+  // Title first, in plain words; the id after it is what --detectors accepts.
   lines.push(
-    `  ${tier}  ${paint.bold(finding.detector)}${where ? `  ${paint.location(where)}` : ""}`,
+    `  ${tier}  ${paint.bold(titleFor(locale, finding.detector))}  ${paint.dim(finding.detector)}${where ? `  ${paint.location(where)}` : ""}`,
   );
 
   const bar = paint.dim(BAR);
@@ -77,7 +80,7 @@ function renderFinding(
     lines.push(`  ${bar}`);
     lines.push(`  ${bar} ${paint.dim(locale.ui.evidence)}`);
     for (const item of finding.evidence) {
-      lines.push(...renderEvidence(item, bar, paint, columns));
+      lines.push(...renderEvidence(item, bar, paint, columns, locale));
     }
   }
 
@@ -98,9 +101,13 @@ function renderEvidence(
   bar: string,
   paint: Paint,
   columns: number,
+  locale: Locale,
 ): string[] {
+  const text = item.noteKey
+    ? noteFor(locale, item.noteKey, item.noteVars ?? {}, item.excerpt)
+    : item.excerpt;
   const stamp = paint.dim(time(item.ts));
-  const body = item.excerpt.split("\n");
+  const body = text.split("\n");
   const out: string[] = [];
   for (const [index, raw] of body.entries()) {
     const wrapped = wrapText(raw, columns - 14);
