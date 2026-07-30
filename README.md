@@ -8,7 +8,7 @@ Your agent said *"All tests pass ✅"*. Did they?
 up with your git history, and shows you — with timestamps and quotes — where
 what it *said* and what it *did* don't match.
 
-![red-handed report: an agent caught committing past the hooks and switching a test off](docs/demo.svg)
+<img src="docs/demo.png" width="760" alt="red-handed report: an agent caught committing past the hooks and switching a test off">
 
 ## Try it in 10 seconds
 
@@ -44,8 +44,8 @@ It cannot tell you whether the code is right. It tells you when the agent's own 
 
 Known blind spots, up front:
 
-- Claims are matched in English and Korean only. A session in another language will produce fewer findings, not wrong ones. The patterns are a data file (`src/claims/patterns.ts`) if you want to add yours.
-- Verification it cannot read is treated as verification it did not see. If your project runs tests through a script whose output this does not parse, a real claim gets downgraded to a suspicion rather than accepted.
+- Claims are matched in English and Korean only. A session in another language produces fewer findings, never wrong ones. The patterns are a data file (`src/claims/patterns.ts`) if you want to add yours.
+- Verification it cannot read is treated as verification it did not see. If your tests run through a script whose output this cannot parse, even a true claim only reaches `SUSPICIOUS`.
 - Browser tests, manual checks and anything else without machine-readable output are invisible to it.
 - `--git-only` mode has no transcript to read, so nothing it reports is ever more than a suspicion.
 
@@ -74,8 +74,7 @@ history and tells you what it found there:
     5  no test ran in that session at all
 ```
 
-That is my machine. Yours will say something else, and it is your number, not a
-claim in a README.
+That is my machine. Yours will say something else.
 
 ## Usage
 
@@ -126,7 +125,12 @@ to `settings.json.red-handed-backup` first. `uninstall-hook` removes it.
 
 ## Requirements
 
-Node 20 or newer. Claude Code session logs are read from `~/.claude/projects`. Test output is parsed for vitest, jest, mocha and pytest, plus `make test`, `go test`, `cargo test` and project scripts named like tests.
+Node 20 or newer. Claude Code session logs are read from `~/.claude/projects`.
+Test output is parsed for vitest, jest, mocha and pytest. Runs are recognised for
+rspec, phpunit, tox, ctest and friends, plus `make test`, `go test`, `cargo test`,
+`./gradlew test`, `./mvnw verify`, `bundle exec`, and project scripts named like
+tests — recognised means a claim about them stays honest, even where the output
+format is not parsed.
 
 ## How it was built
 
@@ -138,12 +142,12 @@ That review is where most of the guards came from. It also caught the tool doing
 the exact thing it exists to detect: the `0 CAUGHT` release gate I had written
 into this README held because my own sessions are all JavaScript and TypeScript,
 so the code path that mis-read a timeout as a failure had never once run. The
-gate passed by luck and reported success. That is the whole reason this tool
-wants to see the evidence rather than the summary.
+gate passed by luck and reported success — the exact move this tool exists to
+catch.
 
 ## Related work
 
-The idea is not new, and I found that out by looking rather than by being told.
+This is not the first tool to try this. I checked before assuming otherwise.
 
 - [agent-receipts](https://github.com/0xelitesystem/agent-receipts) reads the same
   transcripts for the same purpose, and got there first. It is Python, English-only,
@@ -152,8 +156,8 @@ The idea is not new, and I found that out by looking rather than by being told.
   while it happens. This reads the transcript afterwards.
 - Session viewers such as [claude-code-session-viewer](https://github.com/RustingSword/claude_code_session_viewer)
   let you browse transcripts by hand.
-- [vibe-kanban](https://github.com/BloopAI/vibe-kanban) orchestrates agents rather
-  than auditing them.
+- [vibe-kanban](https://github.com/BloopAI/vibe-kanban) orchestrates agents; it
+  does not audit them.
 
 What is different here is the tiering — a `CAUGHT` needs the change to still be in
 your working tree — and how hard that was to get right. If your tool belongs on

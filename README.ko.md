@@ -8,7 +8,7 @@
 에이전트가 *한 말*과 실제로 *한 일*이 어긋나는 지점을 타임스탬프와 인용문으로
 보여줍니다.
 
-![red-handed 리포트: 훅을 끄고 커밋하고 테스트를 꺼버린 에이전트가 검거된 장면](docs/demo.ko.svg)
+<img src="docs/demo.ko.png" width="760" alt="red-handed 리포트: 훅을 끄고 커밋하고 테스트를 꺼버린 에이전트가 검거된 장면">
 
 ## 10초 체험
 
@@ -103,7 +103,11 @@ red-handed install-hook           세션이 끝날 때마다 자동 감사
 
 ## 요구사항
 
-Node 20 이상. 세션 로그는 `~/.claude/projects`에서 읽습니다. 테스트 출력은 vitest, jest, mocha, pytest와 `make test`, `go test`, `cargo test`, 테스트처럼 이름 붙은 프로젝트 스크립트를 인식합니다.
+Node 20 이상. 세션 로그는 `~/.claude/projects`에서 읽습니다. 테스트 출력 파싱은
+vitest, jest, mocha, pytest를 지원하고, rspec·phpunit·tox·ctest와 `make test`,
+`go test`, `cargo test`, `./gradlew test`, `bundle exec`, 테스트처럼 이름 붙은
+프로젝트 스크립트도 실행 자체는 인식합니다 — 출력을 못 읽는 러너라도 그에 대한
+주장을 "검거"로 넘기지 않는다는 뜻입니다.
 
 ## 어떻게 만들었나
 
