@@ -15,7 +15,7 @@ import { DETECTORS } from "./detectors/index.js";
 import { renderCoverage } from "./report/coverage.js";
 import type { AuditReport, SessionInfo } from "./types.js";
 
-const VERSION = "0.1.1";
+const VERSION = "0.1.2";
 
 export interface CliIO {
   out(text: string): void;
@@ -303,7 +303,7 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
   }
 
   if (args.command === "demo") {
-    const report = await demo(lang);
+    const report = await demo({ lang, detectors: args.detectors, exclude: args.exclude });
     if (args.format === "terminal") {
       io.out(`\n  ${resolveLocale(lang).ui.demoNote}\n`);
     }

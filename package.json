@@ -1,6 +1,6 @@
 {
   "name": "@jinhyuk9714/red-handed",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Audit what your coding agent actually did against what it said it did. Reads Claude Code session logs and your git state, cites evidence, calls no model.",
   "keywords": [
     "claude-code",

@@ -40,6 +40,13 @@ describe("red-handed demo", () => {
     expect((await runDemo()).code).toBe(1);
   });
 
+  test("can show a single check, for when seven findings is too many to read", async () => {
+    const { out } = await runDemo(["--json", "--detectors", "claim-vs-fail"]);
+    const parsed = JSON.parse(out) as { findings: Array<{ detector: string }> };
+    expect(parsed.findings.length).toBeGreaterThan(0);
+    for (const finding of parsed.findings) expect(finding.detector).toBe("claim-vs-fail");
+  });
+
   test("the made-up agent speaks Korean in the Korean demo", async () => {
     const { out } = await runDemo(["--lang", "ko"]);
     expect(out).toContain("테스트 34개 전부 통과");

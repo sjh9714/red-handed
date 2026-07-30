@@ -165,8 +165,15 @@ const LINES: Record<string, { prompt: string; claim: string; taxPrompt: string; 
   },
 };
 
+export interface DemoOptions {
+  lang?: string;
+  detectors?: string[];
+  exclude?: string[];
+}
+
 /** Builds the fake project and the transcript of an agent working on it. */
-export async function demo(lang?: string): Promise<AuditReport> {
+export async function demo(options: DemoOptions = {}): Promise<AuditReport> {
+  const lang = options.lang;
   const script = LINES[(lang ?? "en").toLowerCase().split(/[_.\-@]/)[0] ?? "en"] ?? LINES.en!;
   // A named directory inside the temporary one, so the report reads
   // "repo demo-project" rather than showing a random temp name.
@@ -226,7 +233,9 @@ export async function demo(lang?: string): Promise<AuditReport> {
   for (const path of [main, second]) {
     const { actions } = await normalize(path, { subagentPaths: [], toolResultsDir: null });
     const context = buildContext({ actions, repoRoot: root, mode: "session" });
-    findings.push(...runDetectors(context));
+    findings.push(
+      ...runDetectors(context, { detectors: options.detectors, exclude: options.exclude }),
+    );
   }
 
   return {
@@ -236,6 +245,8 @@ export async function demo(lang?: string): Promise<AuditReport> {
     branch: "main",
     mode: "session",
     findings,
-    detectorCount: DETECTORS.length,
+    detectorCount: options.detectors
+      ? DETECTORS.filter((d) => options.detectors?.includes(d.id)).length
+      : DETECTORS.length - (options.exclude?.length ?? 0),
   };
 }
