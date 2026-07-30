@@ -15,7 +15,7 @@ import { DETECTORS } from "./detectors/index.js";
 import { renderCoverage } from "./report/coverage.js";
 import type { AuditReport, SessionInfo } from "./types.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 
 export interface CliIO {
   out(text: string): void;
@@ -235,8 +235,8 @@ async function runAsHook(io: CliIO, lang: string | undefined): Promise<number> {
     const locale = resolveLocale(lang);
     const message =
       locale.id === "ko"
-        ? `red-handed: 이번 세션에서 검거 ${caught}건 — \`npx @jinhyuk9714/red-handed\`로 확인하세요`
-        : `red-handed: ${caught} finding(s) caught this session — run \`npx @jinhyuk9714/red-handed\` to see them`;
+        ? `red-handed: 이번 세션에서 검거 ${caught}건 — \`npx @jinhyuk9714/red-handed@latest\`로 확인하세요`
+        : `red-handed: ${caught} finding(s) caught this session — run \`npx @jinhyuk9714/red-handed@latest\` to see them`;
     io.out(`${JSON.stringify({ systemMessage: message })}\n`);
     return 0;
   } catch {

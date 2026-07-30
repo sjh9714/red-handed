@@ -13,8 +13,8 @@ what it *said* and what it *did* don't match.
 ## Try it in 10 seconds
 
 ```bash
-npx @jinhyuk9714/red-handed demo    # a made-up session — watch every check fire
-npx @jinhyuk9714/red-handed  # then: audit your own latest Claude Code session
+npx @jinhyuk9714/red-handed@latest demo    # a made-up session — watch every check fire
+npx @jinhyuk9714/red-handed@latest  # then: audit your own latest Claude Code session
 ```
 
 No account, no config, no API key. Nothing leaves your machine.
@@ -102,7 +102,7 @@ Exit codes: `0` nothing found, `1` findings at or above `--fail-on`, `2` wrong u
 ### In CI
 
 ```yaml
-- run: npx @jinhyuk9714/red-handed --git-only --fail-on caught
+- run: npx @jinhyuk9714/red-handed@latest --git-only --fail-on caught
 ```
 
 Without a transcript this only reads the diff, so treat it as a smoke alarm rather than a verdict.
@@ -110,7 +110,7 @@ Without a transcript this only reads the diff, so treat it as a smoke alarm rath
 ### Forget it is there
 
 ```
-npx @jinhyuk9714/red-handed install-hook
+npx @jinhyuk9714/red-handed@latest install-hook
 ```
 
 After this, every Claude Code session is audited the moment it ends. When a

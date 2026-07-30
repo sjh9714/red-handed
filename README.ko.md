@@ -13,8 +13,8 @@
 ## 10초 체험
 
 ```bash
-npx @jinhyuk9714/red-handed demo --lang ko   # 지어낸 세션 — 모든 검사가 걸리는 장면
-npx @jinhyuk9714/red-handed     # 그다음: 내 최근 Claude Code 세션 감사
+npx @jinhyuk9714/red-handed@latest demo --lang ko   # 지어낸 세션 — 모든 검사가 걸리는 장면
+npx @jinhyuk9714/red-handed@latest     # 그다음: 내 최근 Claude Code 세션 감사
 ```
 
 계정도, 설정도, API 키도 없습니다. 아무것도 컴퓨터 밖으로 나가지 않습니다.

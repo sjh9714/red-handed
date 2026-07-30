@@ -10,7 +10,9 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-const HOOK_COMMAND = "npx --yes @jinhyuk9714/red-handed hook";
+// The @latest is load-bearing: npx cannot derive the bin of a scoped package
+// from a bare `npx @scope/name`, but resolves it correctly with a version tag.
+const HOOK_COMMAND = "npx --yes @jinhyuk9714/red-handed@latest hook";
 const MARKER = "red-handed";
 
 interface HookEntry {
