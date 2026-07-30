@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-const HOOK_COMMAND = "npx --yes red-handed hook";
+const HOOK_COMMAND = "npx --yes @jinhyuk9714/red-handed hook";
 const MARKER = "red-handed";
 
 interface HookEntry {
