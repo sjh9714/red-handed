@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { audit } from "./commands/audit.js";
 import { demo } from "./commands/demo.js";
 import { installHook, uninstallHook } from "./commands/hook.js";
@@ -326,10 +328,24 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
   return exitCodeFor(report.findings, args.failOn);
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`;
+/**
+ * Whether this file is the program being run.
+ *
+ * The comparison has to go through realpath: npm installs a bin as a symlink,
+ * so argv[1] is node_modules/.bin/red-handed while this module is the file it
+ * points at. Comparing them as written makes the command exit silently.
+ */
+function isEntryPoint(): boolean {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
 
-if (invokedDirectly) {
+if (isEntryPoint()) {
   void main(process.argv.slice(2), {
     out: (text) => process.stdout.write(text),
     err: (text) => process.stderr.write(text),
