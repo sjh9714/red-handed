@@ -35,8 +35,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "demo:shot": "npm run build && node scripts/render-demo-png.mjs",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "demo:gif": "npm run build && vhs scripts/demo.tape"
   },
   "dependencies": {
     "picocolors": "^1.1.1"

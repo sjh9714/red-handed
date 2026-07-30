@@ -8,7 +8,7 @@ Your agent said *"All tests pass ✅"*. Did they?
 up with your git history, and shows you — with timestamps and quotes — where
 what it *said* and what it *did* don't match.
 
-<img src="docs/demo.png" width="760" alt="red-handed report: an agent caught committing past the hooks and switching a test off">
+<img src="docs/demo.gif" width="880" alt="red-handed catching an agent that said the tests passed after the last run had failed, and rewrote an expected value to match the bug">
 
 ## Try it in 10 seconds
 
