@@ -19,6 +19,8 @@ export interface CliIO {
   out(text: string): void;
   err(text: string): void;
   env?: Record<string, string | undefined>;
+  /** What arrived on stdin — hooks receive their context there. */
+  stdin?: string;
 }
 
 const HELP = `red-handed ${VERSION}
@@ -82,6 +84,7 @@ const COMMANDS = new Set([
   "demo",
   "stats",
   "sessions",
+  "hook",
   "install-hook",
   "uninstall-hook",
 ]);
@@ -187,6 +190,43 @@ function systemLang(env: Record<string, string | undefined>): string | undefined
   return env.RED_HANDED_LANG ?? env.LC_ALL ?? env.LC_MESSAGES ?? env.LANG;
 }
 
+/**
+ * What the installed Stop hook runs, once per session as it ends.
+ *
+ * Claude Code hands the session's transcript path on stdin and shows the user
+ * whatever `systemMessage` we print. Two rules matter more than anything here:
+ * silence when there is nothing to say, and exit 0 no matter what — a watchdog
+ * that blocks the session it watches would be doing the very thing it audits.
+ */
+async function runAsHook(io: CliIO, lang: string | undefined): Promise<number> {
+  try {
+    const input: unknown = JSON.parse(io.stdin ?? "");
+    const transcriptPath =
+      input !== null &&
+      typeof input === "object" &&
+      typeof (input as { transcript_path?: unknown }).transcript_path === "string"
+        ? (input as { transcript_path: string }).transcript_path
+        : null;
+    if (transcriptPath === null) return 0;
+
+    const one = await sessionByIdOrPath(transcriptPath, {});
+    if (!one) return 0;
+    const report = await audit({ cwd: one.cwd || process.cwd(), sessions: [one], gitOnly: false });
+    const caught = report.findings.filter((f) => f.tier === "CAUGHT").length;
+    if (caught === 0) return 0;
+
+    const locale = resolveLocale(lang);
+    const message =
+      locale.id === "ko"
+        ? `red-handed: 이번 세션에서 검거 ${caught}건 — \`npx red-handed\`로 확인하세요`
+        : `red-handed: ${caught} finding(s) caught this session — run \`npx red-handed\` to see them`;
+    io.out(`${JSON.stringify({ systemMessage: message })}\n`);
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
 function renderReport(report: AuditReport, args: ParsedArgs, lang: string | undefined): string {
   if (args.format === "json") return renderJson(report);
   if (args.format === "md") return renderMarkdown(report, { lang });
@@ -215,6 +255,10 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
 
   const lang = args.lang ?? systemLang(env);
   const discover = args.claudeHome ? { claudeHome: args.claudeHome } : {};
+
+  if (args.command === "hook") {
+    return runAsHook(io, lang);
+  }
 
   if (args.command === "install-hook" || args.command === "uninstall-hook") {
     const home = args.claudeHome ?? `${env.HOME ?? ""}/.claude`;
@@ -345,11 +389,24 @@ function isEntryPoint(): boolean {
   }
 }
 
+async function readStdin(): Promise<string> {
+  if (process.stdin.isTTY) return "";
+  let data = "";
+  for await (const chunk of process.stdin) data += chunk;
+  return data;
+}
+
 if (isEntryPoint()) {
-  void main(process.argv.slice(2), {
-    out: (text) => process.stdout.write(text),
-    err: (text) => process.stderr.write(text),
-  }).then((code) => {
-    process.exitCode = code;
-  });
+  const wantsStdin = process.argv[2] === "hook";
+  void (wantsStdin ? readStdin() : Promise.resolve(""))
+    .then((stdin) =>
+      main(process.argv.slice(2), {
+        out: (text) => process.stdout.write(text),
+        err: (text) => process.stderr.write(text),
+        stdin,
+      }),
+    )
+    .then((code) => {
+      process.exitCode = code;
+    });
 }

@@ -69,6 +69,15 @@ red-handed demo                   지어낸 세션으로 모든 검사 보기
 red-handed install-hook           세션이 끝날 때마다 자동 감사
 ```
 
+`install-hook`을 한 번 실행해두면 이후에는 아무것도 기억할 필요가 없습니다.
+세션이 끝날 때마다 0.1초 만에 자동으로 감사하고, 깨끗하면 아무것도 보이지
+않으며, 검거된 것이 있을 때만 Claude Code 화면에 경고 한 줄이 뜹니다:
+
+> red-handed: 이번 세션에서 검거 1건 — `npx red-handed`로 확인하세요
+
+어떤 경우에도 세션을 막지 않습니다. 기존 훅은 건드리지 않고, 이전 설정은
+`settings.json.red-handed-backup`으로 백업합니다.
+
 주요 옵션: `--json` / `--md` 기계 판독용 출력, `--lang ko` 한국어, `--fail-on caught|suspicious|never` CI용, `--detectors a,b` 일부만 실행.
 
 종료 코드: `0` 없음, `1` `--fail-on` 기준 이상 발견, `2` 잘못된 사용.

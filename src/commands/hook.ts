@@ -1,8 +1,7 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const HOOK_COMMAND =
-  "npx --yes red-handed --quiet --fail-on never || true";
+const HOOK_COMMAND = "npx --yes red-handed hook";
 const MARKER = "red-handed";
 
 interface HookEntry {

@@ -86,7 +86,15 @@ Without a transcript this only reads the diff, so treat it as a smoke alarm rath
 npx red-handed install-hook
 ```
 
-Adds a Stop hook to `~/.claude/settings.json` that audits each session as it ends and stays quiet unless something was caught. Existing hooks are left alone and the old settings are copied to `settings.json.red-handed-backup` first. `uninstall-hook` removes it.
+After this, every Claude Code session is audited the moment it ends. When a
+session is clean — which is most of them — you see nothing. When something was
+caught, a one-line warning appears right in Claude Code:
+
+> red-handed: 1 finding(s) caught this session — run `npx red-handed` to see them
+
+The audit takes about a tenth of a second and never blocks the session,
+whatever happens. Existing hooks are left alone and the old settings are copied
+to `settings.json.red-handed-backup` first. `uninstall-hook` removes it.
 
 ## Requirements
 
