@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "declaration": false,
+    "sourceMap": true,
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "tsup.config.ts"]
+}

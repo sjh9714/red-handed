@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The self-audit below diffs against the base branch.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      # The tool audits its own diff. If it cannot survive its own checks it has
+      # no business running on anyone else's code.
+      - name: Audit this pull request
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node dist/cli.js --git-only --range "origin/$BASE_REF..HEAD" --fail-on caught
+
+      - name: Every check still fires
+        run: node dist/cli.js demo --fail-on never

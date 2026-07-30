@@ -1,0 +1,339 @@
+#!/usr/bin/env node
+import { audit } from "./commands/audit.js";
+import { demo } from "./commands/demo.js";
+import { installHook, uninstallHook } from "./commands/hook.js";
+import { stats } from "./commands/stats.js";
+import { exitCodeFor, type FailOn } from "./report/exit-code.js";
+import { renderJson } from "./report/json.js";
+import { renderMarkdown } from "./report/markdown.js";
+import { renderTerminal } from "./report/terminal.js";
+import { resolveLocale } from "./report/messages.js";
+import { allSessions, sessionByIdOrPath, sessionsForCwd } from "./session/discover.js";
+import type { AuditReport, SessionInfo } from "./types.js";
+
+const VERSION = "0.1.0";
+
+export interface CliIO {
+  out(text: string): void;
+  err(text: string): void;
+  env?: Record<string, string | undefined>;
+}
+
+const HELP = `red-handed ${VERSION}
+
+  Audits what your coding agent actually did against what it said it did.
+  Reads Claude Code session logs and your git state. Calls no model, sends nothing anywhere.
+
+Usage
+  red-handed [options]                audit the most recent session for this directory
+  red-handed demo                     see every check fire, on a made-up session
+  red-handed stats [options]          add up findings across every session on this machine
+  red-handed sessions [options]       list the sessions found for this directory
+  red-handed install-hook             audit automatically when a session ends
+  red-handed uninstall-hook           undo that
+
+Options
+  --session <id|path>   audit one specific session
+  --all                 audit every session for this directory
+  --git-only            audit the diff instead, for when there is no transcript
+  --range <A..B>        with --git-only, audit a commit range
+  --detectors <a,b>     only run these detectors
+  --exclude <a,b>       run everything except these
+  --fail-on <level>     caught (default) | suspicious | never
+  --lang <code>         report language: en, ko
+  --json                machine-readable output
+  --md                  markdown, for pasting into a pull request
+  --quiet               print only when something was found
+  --no-color            plain text
+  --since <days>        with stats, only sessions from the last N days
+  --cwd <path>          audit a directory other than this one
+  --help, --version
+
+Exit codes
+  0 nothing found   1 findings at or above --fail-on   2 wrong usage
+`;
+
+interface ParsedArgs {
+  command: string;
+  session?: string;
+  all: boolean;
+  gitOnly: boolean;
+  range?: string;
+  detectors?: string[];
+  exclude?: string[];
+  failOn: FailOn;
+  lang?: string;
+  format: "terminal" | "json" | "md";
+  quiet: boolean;
+  color: boolean;
+  sinceDays?: number;
+  cwd: string;
+  claudeHome?: string;
+  help: boolean;
+  version: boolean;
+}
+
+class UsageError extends Error {}
+
+const COMMANDS = new Set([
+  "audit",
+  "demo",
+  "stats",
+  "sessions",
+  "install-hook",
+  "uninstall-hook",
+]);
+
+function parseArgs(argv: string[], env: Record<string, string | undefined>): ParsedArgs {
+  const args: ParsedArgs = {
+    command: "audit",
+    all: false,
+    gitOnly: false,
+    failOn: "caught",
+    format: "terminal",
+    quiet: false,
+    color: env.NO_COLOR === undefined || env.NO_COLOR === "",
+    cwd: process.cwd(),
+    help: false,
+    version: false,
+  };
+
+  const rest = [...argv];
+  if (rest.length > 0 && COMMANDS.has(rest[0] as string)) {
+    args.command = rest.shift() as string;
+  }
+
+  const value = (flag: string): string => {
+    const next = rest.shift();
+    if (next === undefined) throw new UsageError(`${flag} needs a value`);
+    return next;
+  };
+
+  while (rest.length > 0) {
+    const arg = rest.shift() as string;
+    switch (arg) {
+      case "--help":
+      case "-h":
+        args.help = true;
+        break;
+      case "--version":
+      case "-V":
+        args.version = true;
+        break;
+      case "--session":
+        args.session = value(arg);
+        break;
+      case "--all":
+        args.all = true;
+        break;
+      case "--git-only":
+        args.gitOnly = true;
+        break;
+      case "--range":
+        args.range = value(arg);
+        break;
+      case "--detectors":
+        args.detectors = value(arg).split(",").map((s) => s.trim()).filter(Boolean);
+        break;
+      case "--exclude":
+      case "--exclude-detector":
+        args.exclude = value(arg).split(",").map((s) => s.trim()).filter(Boolean);
+        break;
+      case "--fail-on": {
+        const level = value(arg);
+        if (level !== "caught" && level !== "suspicious" && level !== "never") {
+          throw new UsageError(`--fail-on must be caught, suspicious or never`);
+        }
+        args.failOn = level;
+        break;
+      }
+      case "--lang":
+        args.lang = value(arg);
+        break;
+      case "--json":
+        args.format = "json";
+        break;
+      case "--md":
+      case "--markdown":
+        args.format = "md";
+        break;
+      case "--quiet":
+      case "-q":
+        args.quiet = true;
+        break;
+      case "--no-color":
+        args.color = false;
+        break;
+      case "--since":
+        args.sinceDays = Number(value(arg).replace(/d$/, ""));
+        break;
+      case "--cwd":
+        args.cwd = value(arg);
+        break;
+      case "--claude-home":
+        args.claudeHome = value(arg);
+        break;
+      default:
+        throw new UsageError(`unknown option: ${arg}`);
+    }
+  }
+
+  return args;
+}
+
+function systemLang(env: Record<string, string | undefined>): string | undefined {
+  return env.RED_HANDED_LANG ?? env.LC_ALL ?? env.LC_MESSAGES ?? env.LANG;
+}
+
+function renderReport(report: AuditReport, args: ParsedArgs, lang: string | undefined): string {
+  if (args.format === "json") return renderJson(report);
+  if (args.format === "md") return renderMarkdown(report, { lang });
+  return renderTerminal(report, { color: args.color, lang });
+}
+
+export async function main(argv: string[], io: CliIO): Promise<number> {
+  const env = io.env ?? process.env;
+  let args: ParsedArgs;
+  try {
+    args = parseArgs(argv, env);
+  } catch (error) {
+    io.err(`${error instanceof Error ? error.message : String(error)}\n`);
+    io.err(`Run red-handed --help\n`);
+    return 2;
+  }
+
+  if (args.help) {
+    io.out(HELP);
+    return 0;
+  }
+  if (args.version) {
+    io.out(`${VERSION}\n`);
+    return 0;
+  }
+
+  const lang = args.lang ?? systemLang(env);
+  const discover = args.claudeHome ? { claudeHome: args.claudeHome } : {};
+
+  if (args.command === "install-hook" || args.command === "uninstall-hook") {
+    const home = args.claudeHome ?? `${env.HOME ?? ""}/.claude`;
+    const result =
+      args.command === "install-hook" ? installHook(home) : uninstallHook(home);
+    io.out(`${result.message}: ${result.path}\n`);
+    return 0;
+  }
+
+  if (args.command === "demo") {
+    const report = await demo();
+    if (args.format === "terminal") {
+      io.out(`\n  ${resolveLocale(lang).ui.demoNote}\n`);
+    }
+    io.out(renderReport(report, args, lang));
+    return exitCodeFor(report.findings, args.failOn);
+  }
+
+  if (args.command === "sessions") {
+    const found = args.all ? allSessions(discover) : sessionsForCwd(args.cwd, discover);
+    if (found.length === 0) {
+      io.err(`no session found for ${args.cwd}\n`);
+      return 0;
+    }
+    for (const session of found) {
+      const when = new Date(session.mtimeMs).toISOString().slice(0, 16).replace("T", " ");
+      const size = `${Math.round(session.sizeBytes / 1024)}KB`;
+      io.out(`${session.sessionId.slice(0, 8)}  ${when}  ${size.padStart(8)}  ${session.cwd}\n`);
+    }
+    return 0;
+  }
+
+  if (args.command === "stats") {
+    const result = await stats({
+      ...discover,
+      sinceMs:
+        args.sinceDays === undefined ? undefined : Date.now() - args.sinceDays * 86_400_000,
+    });
+    const report: AuditReport = {
+      repoRoot: null,
+      branch: null,
+      mode: "session",
+      findings: result.findings,
+      detectorCount: Object.keys(result.byDetector).length,
+      sessionsScanned: result.sessionsScanned,
+    };
+    if (args.format === "json") {
+      io.out(
+        `${JSON.stringify(
+          {
+            version: 1,
+            sessionsScanned: result.sessionsScanned,
+            sessionsWithFindings: result.sessionsWithFindings,
+            summary: { caught: result.caught, suspicious: result.suspicious },
+            byDetector: result.byDetector,
+            projects: result.projects,
+            findings: result.findings,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      io.out(renderTerminal(report, { color: args.color, lang }));
+      if (result.projects.length > 0) {
+        io.out(`  ${result.sessionsWithFindings}/${result.sessionsScanned} sessions had something\n`);
+        for (const project of result.projects.slice(0, 10)) {
+          const name = project.project.split("/").filter(Boolean).pop() ?? project.project;
+          io.out(`    ${name.padEnd(28)} caught ${project.caught}  suspicious ${project.suspicious}\n`);
+        }
+        io.out("\n");
+      }
+    }
+    return exitCodeFor(result.findings, args.failOn);
+  }
+
+  let sessions: SessionInfo[] = [];
+  if (!args.gitOnly) {
+    if (args.session) {
+      const one = await sessionByIdOrPath(args.session, discover);
+      if (!one) {
+        io.err(`no session matching ${args.session}\n`);
+        return 2;
+      }
+      sessions = [one];
+    } else {
+      const found = sessionsForCwd(args.cwd, discover);
+      sessions = args.all ? found : found.slice(0, 1);
+      if (found.length === 0) {
+        io.err(
+          `no session log found for ${args.cwd}\nIf this project was written by another agent, try: red-handed --git-only\n`,
+        );
+        return 0;
+      }
+    }
+  }
+
+  const report = await audit({
+    cwd: args.cwd,
+    sessions,
+    gitOnly: args.gitOnly,
+    range: args.range,
+    detectors: args.detectors,
+    exclude: args.exclude,
+  });
+
+  if (args.quiet && report.findings.every((f) => f.tier !== "CAUGHT")) {
+    return exitCodeFor(report.findings, args.failOn);
+  }
+  io.out(renderReport(report, args, lang));
+  return exitCodeFor(report.findings, args.failOn);
+}
+
+const invokedDirectly =
+  process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`;
+
+if (invokedDirectly) {
+  void main(process.argv.slice(2), {
+    out: (text) => process.stdout.write(text),
+    err: (text) => process.stderr.write(text),
+  }).then((code) => {
+    process.exitCode = code;
+  });
+}

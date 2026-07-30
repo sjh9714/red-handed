@@ -1,0 +1,47 @@
+{
+  "name": "red-handed",
+  "version": "0.1.0",
+  "description": "Audit what your coding agent actually did against what it said it did. Reads Claude Code session logs and your git state, cites evidence, calls no model.",
+  "keywords": [
+    "claude-code",
+    "coding-agent",
+    "audit",
+    "tests",
+    "cli"
+  ],
+  "license": "MIT",
+  "author": "JinHyuk Sung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sjh9714/redhanded.git"
+  },
+  "homepage": "https://github.com/sjh9714/redhanded",
+  "type": "module",
+  "bin": {
+    "red-handed": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "node --experimental-strip-types src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
