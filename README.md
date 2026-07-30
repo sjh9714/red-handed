@@ -19,6 +19,19 @@ npx @jinhyuk9714/red-handed@latest  # then: audit your own latest Claude Code se
 
 No account, no config, no API key. Nothing leaves your machine.
 
+Or install it as a Claude Code plugin, and ask Claude directly whether the tests
+it just reported as passing actually ran:
+
+```bash
+claude plugin marketplace add sjh9714/red-handed
+claude plugin install red-handed@red-handed
+```
+
+That adds `/red-handed:audit` for this project and `/red-handed:history` for
+every session on the machine. The plugin registers no hooks and runs nothing on
+its own — see [Forget it is there](#forget-it-is-there) if you want the audit to
+happen automatically.
+
 ## The eight checks
 
 | what it catches | id |

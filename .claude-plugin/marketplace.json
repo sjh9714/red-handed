@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.schemastore.org/claude-code-marketplace.json",
+  "name": "red-handed",
+  "description": "Audit what a coding agent actually did against what it said it did, from the session transcript and the repository's git state.",
+  "owner": {
+    "name": "JinHyuk Sung",
+    "url": "https://github.com/sjh9714"
+  },
+  "plugins": [
+    {
+      "name": "red-handed",
+      "description": "Reads this project's Claude Code session transcripts under ~/.claude/projects, lines them up against git, and reports where a claim is not supported by the record: tests reported as passing with no run behind them, an expected value rewritten to match a failure, a test switched off, a commit made past a rejecting hook. Local files only, no network, no model calls.",
+      "source": "./",
+      "category": "observability"
+    }
+  ]
+}

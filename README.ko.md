@@ -20,6 +20,18 @@ npx @jinhyuk9714/red-handed@latest     # 그다음: 내 최근 Claude Code 세�
 계정도, 설정도, API 키도 없습니다. 아무것도 컴퓨터 밖으로 나가지 않습니다.
 (리포트 언어는 시스템 로케일을 따라가므로 한국어 macOS에서는 `--lang ko` 없이도 한국어로 나옵니다.)
 
+Claude Code 플러그인으로 설치하면, 방금 "테스트 통과했다"고 한 그 말이 사실인지
+Claude에게 직접 물어볼 수 있습니다:
+
+```bash
+claude plugin marketplace add sjh9714/red-handed
+claude plugin install red-handed@red-handed
+```
+
+`/red-handed:audit`(이 프로젝트)와 `/red-handed:history`(이 컴퓨터 전체)가 추가됩니다.
+플러그인 자체는 훅을 등록하지 않고 스스로 아무것도 실행하지 않습니다. 자동 감사를
+원하면 아래 `install-hook`을 쓰세요.
+
 ## 검사 여덟 가지
 
 | 무엇을 잡나 | id |
