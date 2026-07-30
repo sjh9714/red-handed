@@ -84,12 +84,19 @@ You do not have to take my word for the rate. `red-handed stats` reads your own
 history and tells you what it found there:
 
 ```
-192 sessions. Your agent said "tests pass" 90 times.
-   85  a test ran first
+194 sessions. Your agent said "tests pass" 94 times.
+   89  a test ran first
     5  no test ran in that session at all
 ```
 
 That is my machine. Yours will say something else.
+
+Running it on my own history is also where the sixth one turned up. A scoped
+`pytest tests/test_sync_cli.py` was followed by edits to a GitHub workflow and
+two `.tsx` files in a separate web app, and the tool called the claim stale. A
+Python test cannot import a `.tsx` file and a workflow is not what just ran, so
+nothing about that claim had gone stale. It now only counts a change the runner
+could actually have loaded.
 
 ## Usage
 

@@ -6,6 +6,7 @@ import type {
   DetectorContext,
   EvidenceItem,
   FileEditAction,
+  TestFramework,
 } from "../types.js";
 
 const MAX_EXCERPT = 200;
@@ -137,6 +138,42 @@ export function isConfigFile(path: string): boolean {
 
 export function isWorkflowFile(path: string): boolean {
   return /\.github\/workflows\/[^/]+\.ya?ml$/.test(path);
+}
+
+/** Source a JavaScript runner can load, and source it definitively cannot. */
+const JS_SOURCE = /\.(?:[cm]?[jt]sx?|vue|svelte)$/i;
+const PY_SOURCE = /\.(?:py|pyi)$/i;
+
+/**
+ * Whether editing this file could change what that run reported.
+ *
+ * Narrower than `couldAffectTests`, and used only where the question is whether
+ * a *passing* run went stale. Accusing someone of a stale claim is a smaller
+ * charge than accusing them of lying, but it is still a charge, and it should
+ * not rest on a file the runner could not have loaded.
+ *
+ * Only definite mismatches suppress: pytest cannot import a `.tsx`, a
+ * JavaScript runner cannot import a `.py`, and a CI workflow is not what just
+ * ran on this machine. Anything else — a `package.json`, a `.go` file, a lock
+ * file, a fixture — is left alone, because "looks unrelated" is a guess and a
+ * guess is not grounds for dropping evidence.
+ */
+export function couldReachRun(
+  ctx: DetectorContext,
+  filePath: string,
+  framework: TestFramework,
+): boolean {
+  if (!couldAffectTests(ctx, filePath)) return false;
+  // Editing the pipeline changes what CI will do next time, not what the
+  // command that already ran here reported.
+  if (isWorkflowFile(filePath)) return false;
+  if (framework === "pytest") return !JS_SOURCE.test(filePath);
+  if (framework === "vitest" || framework === "jest" || framework === "mocha") {
+    return !PY_SOURCE.test(filePath);
+  }
+  // "generic" means the runner was recognised but not identified, so there is
+  // nothing to reason from.
+  return true;
 }
 
 /** True when the user themselves asked for whatever we are about to flag. */

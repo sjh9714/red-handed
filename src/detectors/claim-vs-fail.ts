@@ -1,6 +1,6 @@
 import { editsBetween, lastTestRunBefore } from "../correlate/timeline.js";
 import type { Detector, DetectorContext, Finding } from "../types.js";
-import { couldAffectTests, excerpt, unreadableVerificationBetween } from "./helpers.js";
+import { couldReachRun, excerpt, unreadableVerificationBetween } from "./helpers.js";
 
 /**
  * Saying the tests pass when the last thing that ran said otherwise.
@@ -54,7 +54,7 @@ export const claimVsFail: Detector = {
 
       if (evidence.status === "passed") {
         const changed = editsBetween(ctx.actions, run.seq, claim.seq).filter((edit) =>
-          couldAffectTests(ctx, edit.filePath),
+          couldReachRun(ctx, edit.filePath, evidence.framework),
         );
         if (changed.length === 0) continue;
         const files = [...new Set(changed.map((e) => ctx.worktree.relative(e.filePath)))];
