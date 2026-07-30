@@ -32,7 +32,7 @@ every session on the machine. The plugin registers no hooks and runs nothing on
 its own — see [Forget it is there](#forget-it-is-there) if you want the audit to
 happen automatically.
 
-## The eight checks
+## The nine checks
 
 | what it catches | id |
 | --- | --- |
@@ -40,6 +40,7 @@ happen automatically.
 | said tests pass — the last run failed | `claim-vs-fail` |
 | said tests pass — none ran, not even in a subagent | `claim-no-run` |
 | rewrote the expected value to match the bug, code untouched | `hardcoded-expected` |
+| replaced the assertion with one that cannot fail, or commented it out | `assertion-weakening` |
 | switched a test off (`.skip`, `.only`, `xit`, `@pytest.mark.skip`) | `skip-only` |
 | hook rejected the commit → committed again with hooks off | `no-verify` |
 | turned a check off (`strict: false`, CI test step deleted, suppression on a failing line) | `config-disable` |

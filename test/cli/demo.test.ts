@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { main } from "../../src/cli.js";
+import { DETECTORS } from "../../src/detectors/index.js";
 
 async function runDemo(extra: string[] = []): Promise<{ code: number; out: string }> {
   let out = "";
@@ -18,17 +19,10 @@ describe("red-handed demo", () => {
     const { out } = await runDemo(["--json"]);
     const parsed = JSON.parse(out) as { findings: Array<{ detector: string }> };
     const detectors = new Set(parsed.findings.map((f) => f.detector));
-    expect(detectors).toEqual(
-      new Set([
-        "no-verify",
-        "skip-only",
-        "claim-vs-fail",
-        "claim-no-run",
-        "hardcoded-expected",
-        "config-disable",
-        "error-swallowing",
-      ]),
-    );
+    // Compared against the registry rather than a hand-written list. The demo
+    // tells the reader that every check has something to show, and a list
+    // maintained by hand quietly stopped being true once before.
+    expect(detectors).toEqual(new Set(DETECTORS.map((d) => d.id)));
   });
 
   test("says out loud that the session is made up", async () => {

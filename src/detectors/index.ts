@@ -1,4 +1,5 @@
 import type { Detector, DetectorContext, Finding } from "../types.js";
+import { assertionWeakening } from "./assertion-weakening.js";
 import { claimNoRun } from "./claim-no-run.js";
 import { claimVsFail } from "./claim-vs-fail.js";
 import { configDisable } from "./config-disable.js";
@@ -15,6 +16,7 @@ export const DETECTORS: Detector[] = [
   claimVsFail,
   claimNoRun,
   hardcodedExpected,
+  assertionWeakening,
   testCensus,
   configDisable,
   errorSwallowing,

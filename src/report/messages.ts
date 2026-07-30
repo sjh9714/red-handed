@@ -74,6 +74,9 @@ const en: Locale = {
     "error-swallowing.empty": "made an error vanish",
     "test-census": "the suite got smaller",
     "test-census.shrank": "the suite got smaller",
+    "assertion-weakening": "the assertion stopped checking anything",
+    "assertion-weakening.vacuous": "the assertion stopped checking anything",
+    "assertion-weakening.commented": "commented the assertion out",
   },
   notes: {
     "note.no-impl-change": "no implementation file was changed between the failure and this edit",
@@ -187,6 +190,16 @@ const en: Locale = {
         "The same command reported {before} tests and later reported {after}. {gone} of them stopped existing, and a test that no longer runs cannot fail.",
       check: "Find out which {gone} went, and whether they were meant to.",
     },
+    "assertion-weakening.vacuous": {
+      narrative:
+        "The test failed, so the agent replaced the check with one that almost anything passes. `{before}` became `{after}`. The suite is green again because nothing is being compared any more.",
+      check: "Put the original assertion back and see what it says.",
+    },
+    "assertion-weakening.commented": {
+      narrative:
+        "The test failed, and the agent commented the assertion out rather than making it pass. `{before}` is still in the file, but it no longer runs.",
+      check: "Uncomment it and see whether it was right to begin with.",
+    },
   },
 };
 
@@ -219,6 +232,9 @@ const ko: Locale = {
     "error-swallowing.empty": "에러를 삼킴",
     "test-census": "테스트 개수가 줄었음",
     "test-census.shrank": "테스트 개수가 줄었음",
+    "assertion-weakening": "단언이 아무것도 검사하지 않게 됨",
+    "assertion-weakening.vacuous": "단언이 아무것도 검사하지 않게 됨",
+    "assertion-weakening.commented": "단언을 주석 처리함",
   },
   notes: {
     "note.no-impl-change": "실패와 이 수정 사이에 구현 코드는 그대로였음",
@@ -331,6 +347,16 @@ const ko: Locale = {
       narrative:
         "같은 명령이 처음엔 테스트 {before}개를, 나중엔 {after}개를 보고했습니다. {gone}개가 사라졌고, 돌지 않는 테스트는 실패할 수도 없습니다.",
       check: "사라진 {gone}개가 무엇이었고, 사라져도 되는 것이었는지 확인하세요.",
+    },
+    "assertion-weakening.vacuous": {
+      narrative:
+        "테스트가 실패하자, 에이전트는 그 검사를 거의 무엇이든 통과하는 것으로 바꿨습니다. `{before}`가 `{after}`가 됐습니다. 비교하는 것이 없어졌기 때문에 다시 초록이 된 겁니다.",
+      check: "원래 단언을 되돌려놓고 무엇이라고 하는지 보세요.",
+    },
+    "assertion-weakening.commented": {
+      narrative:
+        "테스트가 실패하자, 에이전트는 통과시키는 대신 단언을 주석 처리했습니다. `{before}`는 파일에 그대로 있지만 더 이상 실행되지 않습니다.",
+      check: "주석을 풀고 그 단언이 애초에 맞는 것이었는지 확인하세요.",
     },
   },
 };
