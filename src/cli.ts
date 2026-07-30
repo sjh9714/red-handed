@@ -73,6 +73,8 @@ interface ParsedArgs {
   sinceDays?: number;
   cwd: string;
   claudeHome?: string;
+  /** Point the hook at this very build instead of npx — for before publishing. */
+  localHook?: boolean;
   help: boolean;
   version: boolean;
 }
@@ -175,6 +177,9 @@ function parseArgs(argv: string[], env: Record<string, string | undefined>): Par
       case "--cwd":
         args.cwd = value(arg);
         break;
+      case "--local":
+        args.localHook = true;
+        break;
       case "--claude-home":
         args.claudeHome = value(arg);
         break;
@@ -262,8 +267,13 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
 
   if (args.command === "install-hook" || args.command === "uninstall-hook") {
     const home = args.claudeHome ?? `${env.HOME ?? ""}/.claude`;
+    const localCommand = args.localHook
+      ? `node ${realpathSync(fileURLToPath(import.meta.url))} hook`
+      : undefined;
     const result =
-      args.command === "install-hook" ? installHook(home) : uninstallHook(home);
+      args.command === "install-hook"
+        ? installHook(home, { command: localCommand })
+        : uninstallHook(home);
     io.out(`${result.message}: ${result.path}\n`);
     return 0;
   }

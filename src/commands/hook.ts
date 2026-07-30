@@ -50,7 +50,10 @@ export interface HookResult {
  * Existing hooks are left exactly as they are — this machine already runs
  * several — and the previous settings are copied aside first.
  */
-export function installHook(claudeHome: string): HookResult {
+export function installHook(
+  claudeHome: string,
+  options: { command?: string } = {},
+): HookResult {
   const path = settingsPath(claudeHome);
   const settings = readSettings(path);
   const hooks = settings.hooks ?? {};
@@ -59,6 +62,7 @@ export function installHook(claudeHome: string): HookResult {
   if (containsHook(stop)) {
     return { changed: false, message: "already installed", path };
   }
+  const command = options.command ?? HOOK_COMMAND;
 
   if (existsSync(path)) copyFileSync(path, `${path}.red-handed-backup`);
   else writeFileSync(`${path}.red-handed-backup`, JSON.stringify({ hooks: {} }, null, 2));
@@ -67,7 +71,7 @@ export function installHook(claudeHome: string): HookResult {
     ...settings,
     hooks: {
       ...hooks,
-      Stop: [...stop, { hooks: [{ type: "command", command: HOOK_COMMAND, timeout: 30 }] }],
+      Stop: [...stop, { hooks: [{ type: "command", command, timeout: 30 }] }],
     },
   };
   writeFileSync(path, `${JSON.stringify(updated, null, 2)}\n`);

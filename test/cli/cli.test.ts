@@ -209,6 +209,19 @@ describe("red-handed install-hook", () => {
     expect(mine).toHaveLength(1);
   });
 
+  test("can point the hook at this very build, for before the package exists", async () => {
+    const home = homeWithSettings({ hooks: {} });
+    await run(["install-hook", "--local", "--claude-home", home]);
+    const settings = JSON.parse(readFileSync(join(home, "settings.json"), "utf8")) as {
+      hooks: { Stop: Array<{ hooks: Array<{ command: string }> }> };
+    };
+    const mine = settings.hooks.Stop.flatMap((e) => e.hooks).find((h) =>
+      h.command.includes("hook"),
+    );
+    expect(mine?.command.startsWith("node ")).toBe(true);
+    expect(mine?.command).not.toContain("npx");
+  });
+
   test("takes itself back out again", async () => {
     const home = homeWithSettings({
       hooks: { Stop: [{ hooks: [{ type: "command", command: "existing-hook.sh" }] }] },
