@@ -33,8 +33,11 @@ function stripNonAssertions(text: string): string {
 }
 
 function sentences(text: string): string[] {
+  // `。！？` end a sentence in Japanese and Chinese and are not followed by a
+  // space, so without them a whole CJK paragraph arrives here as one sentence
+  // and a reject in any clause silences a claim in every other one.
   return text
-    .split(/(?<=[.!?])\s+|[\n;]+/)
+    .split(/(?<=[.!?])\s+|(?<=[。！？])|[\n;]+/)
     .map((s) => s.trim())
     .filter((s) => s !== "");
 }

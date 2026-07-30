@@ -79,4 +79,72 @@ const korean: LocalePack = {
   hedge: [/(?:같습니다|같아요|듯|아마|보입니다|예상)/],
 };
 
-export const LOCALE_PACKS: LocalePack[] = [english, korean];
+/**
+ * Japanese. As with Korean, no `\b` anywhere: JavaScript word boundaries are
+ * defined over [A-Za-z0-9_] and never match against kana or kanji.
+ *
+ * The rejects carry most of the weight. `通す` is the causative — "make the
+ * tests pass" — and describes work still to be done, which is the opposite of
+ * `通った`, the plain past. Getting those two confused is exactly the false
+ * accusation this tool must not make.
+ */
+const japanese: LocalePack = {
+  id: "ja",
+  claims: [
+    { family: "test-pass", pattern: /テスト[^\n]{0,20}?(?:通り|通っ|通過|パス)/ },
+    { family: "test-pass", pattern: /テスト[^\n]{0,20}?成功/ },
+    { family: "test-pass", pattern: /テスト[^\n]{0,10}(?:グリーン|緑)/ },
+    {
+      family: "build-pass",
+      pattern:
+        /(?:ビルド|型チェック|タイプチェック|リント|コンパイル)[^\n]{0,10}?(?:成功|通り|通っ|通過|パス|クリーン)/,
+    },
+    {
+      family: "build-pass",
+      pattern: /(?:型|リント|コンパイル|ビルド)エラー[^\n]{0,10}?(?:ありません|無い|ない)/,
+    },
+  ],
+  reject: [
+    /[?？]\s*$/,
+    /(?:失敗|落ち[たて]|エラーが残|通りません|通っていません|できません|できなかった)/,
+    // Intentions and plans: something the agent is about to do, not something done.
+    /(?:確認し|検証し|実行し|してみ|する予定|しましょう|してから)/,
+    /(?:まだ|ていません|ていない)/,
+    // "make the tests pass" — a goal, not a result.
+    /(?:通す|通るように|通すため|パスさせ|通そう)/,
+    /\d+\s*(?:件|個|つ)?中\s*\d+/,
+    /(?:一部|残り|半分)/,
+  ],
+  hedge: [/(?:と思います|でしょう|はず|多分|たぶん|ようです|みたいです|かもしれ)/],
+};
+
+/**
+ * Chinese, simplified and traditional together. Character classes rather than
+ * two packs, because a session mixes them freely and the alternative is
+ * maintaining the same rule twice.
+ */
+const chinese: LocalePack = {
+  id: "zh",
+  claims: [
+    { family: "test-pass", pattern: /[测測][试試][^\n]{0,20}?通[过過]/ },
+    { family: "test-pass", pattern: /[测測][试試][^\n]{0,10}?[绿綠]色/ },
+    {
+      family: "build-pass",
+      pattern:
+        /(?:构建|構建|建置|编译|編譯|类型检查|類型檢查|类型檢查|检查|檢查)[^\n]{0,10}?(?:成功|通[过過])/,
+    },
+    { family: "build-pass", pattern: /(?:没有|沒有|无|無)[^\n]{0,8}(?:错误|錯誤)/ },
+  ],
+  reject: [
+    /[?？]\s*$/,
+    /(?:失败|失敗|没通[过過]|沒通[过過]|未通[过過]|报错|報錯)/,
+    /(?:还没|還沒|尚未|还未|還未)/,
+    // Intentions, and the causative "make the tests pass".
+    /(?:先运行|先執行|我先|将要|將要|准备|準備|确认是否|確認是否|检查一下|檢查一下|让|讓|使)/,
+    /\d+[^\n]{0,6}中[^\n]{0,6}\d+/,
+    /(?:部分|其余|其餘|剩下)/,
+  ],
+  hedge: [/(?:应该|應該|可能|大概|似乎|好像|预计|預計)/],
+};
+
+export const LOCALE_PACKS: LocalePack[] = [english, korean, japanese, chinese];

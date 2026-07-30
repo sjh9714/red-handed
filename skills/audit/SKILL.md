@@ -56,6 +56,7 @@ mistaken for a guarantee:
 
 - Verification it cannot read counts as verification it did not see. A project's
   own test script, a browser check, anything without machine-readable output.
-- Claim sentences are matched in English and Korean only.
+- Claim sentences are matched in English, Korean, Japanese and Chinese. The
+  report itself is written in English or Korean.
 - It says nothing about whether the code is correct. It only reports where the
   record does not support the claim.

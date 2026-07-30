@@ -50,7 +50,8 @@ Every finding carries the timestamp and the quoted line it came from, so you can
 open the transcript yourself and disagree.
 
 No model is called. The whole thing is deterministic: the same session gives the
-same answer every time. Reports come in English and Korean (`--lang ko`).
+same answer every time. Claims are matched in English, Korean, Japanese and
+Chinese; reports come in English and Korean (`--lang ko`).
 
 ## What it does not do
 
@@ -58,7 +59,7 @@ It cannot tell you whether the code is right. It tells you when the agent's own 
 
 Known blind spots, up front:
 
-- Claims are matched in English and Korean only. A session in another language produces fewer findings, never wrong ones. The patterns are a data file (`src/claims/patterns.ts`) if you want to add yours.
+- Claim sentences are matched in English, Korean, Japanese and Chinese. The report itself is written in English or Korean; a Japanese or Chinese session is read correctly but reported in English, because a translation nobody checked is worse than none. A session in an unlisted language produces fewer findings, never wrong ones. The patterns are a data file (`src/claims/patterns.ts`) if you want to add yours.
 - Verification it cannot read is treated as verification it did not see. If your tests run through a script whose output this cannot parse, even a true claim only reaches `SUSPICIOUS`.
 - Browser tests, manual checks and anything else without machine-readable output are invisible to it.
 - `--git-only` mode has no transcript to read, so nothing it reports is ever more than a suspicion.
