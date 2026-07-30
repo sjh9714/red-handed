@@ -82,8 +82,8 @@ You do not have to take my word for the rate. `red-handed stats` reads your own
 history and tells you what it found there:
 
 ```
-184 sessions. Your agent said "tests pass" 84 times.
-   79  a test ran first
+192 sessions. Your agent said "tests pass" 90 times.
+   85  a test ran first
     5  no test ran in that session at all
 ```
 
