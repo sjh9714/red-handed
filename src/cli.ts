@@ -10,7 +10,9 @@ import { renderJson } from "./report/json.js";
 import { renderMarkdown } from "./report/markdown.js";
 import { renderTerminal } from "./report/terminal.js";
 import { resolveLocale } from "./report/messages.js";
-import { allSessions, sessionByIdOrPath, sessionsForCwd } from "./session/discover.js";
+import { allSessions, claudeHomeDir, sessionByIdOrPath, sessionsForCwd } from "./session/discover.js";
+import { DETECTORS } from "./detectors/index.js";
+import { renderCoverage } from "./report/coverage.js";
 import type { AuditReport, SessionInfo } from "./types.js";
 
 const VERSION = "0.1.0";
@@ -50,6 +52,7 @@ Options
   --quiet               print only when something was found
   --no-color            plain text
   --since <days>        with stats, only sessions from the last N days
+  --no-cache            with stats, ignore the cache in ~/.red-handed
   --cwd <path>          audit a directory other than this one
   --help, --version
 
@@ -75,6 +78,7 @@ interface ParsedArgs {
   claudeHome?: string;
   /** Point the hook at this very build instead of npx — for before publishing. */
   localHook?: boolean;
+  noCache?: boolean;
   help: boolean;
   version: boolean;
 }
@@ -171,14 +175,22 @@ function parseArgs(argv: string[], env: Record<string, string | undefined>): Par
       case "--no-color":
         args.color = false;
         break;
-      case "--since":
-        args.sinceDays = Number(value(arg).replace(/d$/, ""));
+      case "--since": {
+        const days = Number(value(arg).replace(/d$/, ""));
+        if (!Number.isFinite(days) || days < 0) {
+          throw new UsageError(`--since needs a number of days, not "${arg}"`);
+        }
+        args.sinceDays = days;
         break;
+      }
       case "--cwd":
         args.cwd = value(arg);
         break;
       case "--local":
         args.localHook = true;
+        break;
+      case "--no-cache":
+        args.noCache = true;
         break;
       case "--claude-home":
         args.claudeHome = value(arg);
@@ -253,6 +265,13 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
     io.out(HELP);
     return 0;
   }
+
+  const known = new Set(DETECTORS.map((d) => d.id));
+  for (const id of [...(args.detectors ?? []), ...(args.exclude ?? [])]) {
+    if (known.has(id)) continue;
+    io.err(`unknown detector: ${id}\nAvailable: ${[...known].join(", ")}\n`);
+    return 2;
+  }
   if (args.version) {
     io.out(`${VERSION}\n`);
     return 0;
@@ -266,16 +285,21 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
   }
 
   if (args.command === "install-hook" || args.command === "uninstall-hook") {
-    const home = args.claudeHome ?? `${env.HOME ?? ""}/.claude`;
+    const home = claudeHomeDir({ claudeHome: args.claudeHome, env });
     const localCommand = args.localHook
       ? `node ${realpathSync(fileURLToPath(import.meta.url))} hook`
       : undefined;
-    const result =
-      args.command === "install-hook"
-        ? installHook(home, { command: localCommand })
-        : uninstallHook(home);
-    io.out(`${result.message}: ${result.path}\n`);
-    return 0;
+    try {
+      const result =
+        args.command === "install-hook"
+          ? installHook(home, { command: localCommand })
+          : uninstallHook(home);
+      io.out(`${result.message}: ${result.path}\n`);
+      return 0;
+    } catch (error) {
+      io.err(`${error instanceof Error ? error.message : String(error)}\n`);
+      return 2;
+    }
   }
 
   if (args.command === "demo") {
@@ -304,6 +328,8 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
   if (args.command === "stats") {
     const result = await stats({
       ...discover,
+      env,
+      useCache: !args.noCache,
       sinceMs:
         args.sinceDays === undefined ? undefined : Date.now() - args.sinceDays * 86_400_000,
     });
@@ -312,7 +338,7 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
       branch: null,
       mode: "session",
       findings: result.findings,
-      detectorCount: Object.keys(result.byDetector).length,
+      detectorCount: DETECTORS.length,
       sessionsScanned: result.sessionsScanned,
     };
     if (args.format === "json") {
@@ -323,6 +349,7 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
             sessionsScanned: result.sessionsScanned,
             sessionsWithFindings: result.sessionsWithFindings,
             summary: { caught: result.caught, suspicious: result.suspicious },
+            coverage: result.coverage,
             byDetector: result.byDetector,
             projects: result.projects,
             findings: result.findings,
@@ -332,6 +359,7 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
         )}\n`,
       );
     } else {
+      io.out(renderCoverage(result.coverage, result.sessionsScanned, lang, args.color));
       io.out(renderTerminal(report, { color: args.color, lang }));
       if (result.projects.length > 0) {
         io.out(`  ${result.sessionsWithFindings}/${result.sessionsScanned} sessions had something\n`);
@@ -375,11 +403,10 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
     exclude: args.exclude,
   });
 
-  if (args.quiet && report.findings.every((f) => f.tier !== "CAUGHT")) {
-    return exitCodeFor(report.findings, args.failOn);
-  }
+  const code = exitCodeFor(report.findings, args.failOn);
+  if (args.quiet && code === 0 && args.format !== "json") return code;
   io.out(renderReport(report, args, lang));
-  return exitCodeFor(report.findings, args.failOn);
+  return code;
 }
 
 /**

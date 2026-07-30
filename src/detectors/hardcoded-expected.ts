@@ -1,4 +1,4 @@
-import { editsBetween } from "../correlate/timeline.js";
+import { editsBetween, lastTestRunBefore } from "../correlate/timeline.js";
 import type { CommandAction, Detector, DetectorContext, Finding } from "../types.js";
 import {
   addedLines,
@@ -57,10 +57,16 @@ export const hardcodedExpected: Detector = {
           );
           if (!changedLine) continue;
 
-          // The agent fixing the code and then updating the test is normal work.
-          const touchedImplementation = editsBetween(ctx.actions, run.seq, action.seq).some(
-            (edit) => !isTestFile(edit.filePath),
-          );
+          // The agent fixing the code and then updating the test is normal work —
+          // and so is the reverse order. When the user asks for a behaviour change,
+          // the implementation edit always comes BEFORE the run that exposes the
+          // now-stale assertion, so the window has to reach back past the failure.
+          const previousRun = lastTestRunBefore(ctx.actions, run.seq);
+          const touchedImplementation = editsBetween(
+            ctx.actions,
+            previousRun?.seq ?? -1,
+            action.seq,
+          ).some((edit) => !isTestFile(edit.filePath));
           if (touchedImplementation) continue;
 
           const located = anchor(ctx, action.filePath, changedLine);

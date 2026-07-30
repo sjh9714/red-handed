@@ -7,6 +7,7 @@ import { readJsonlLines } from "./parse.js";
 
 export interface DiscoverOptions {
   claudeHome?: string;
+  env?: Record<string, string | undefined>;
 }
 
 /** How Claude Code names a project's transcript directory. */
@@ -15,7 +16,8 @@ export function flattenPath(path: string): string {
 }
 
 export function claudeHomeDir(options: DiscoverOptions = {}): string {
-  return options.claudeHome ?? process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
+  const env = options.env ?? process.env;
+  return options.claudeHome ?? env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
 }
 
 function projectsDir(options: DiscoverOptions = {}): string {
@@ -36,20 +38,30 @@ async function readSessionCwd(path: string): Promise<string | null> {
   return null;
 }
 
-/** Synchronous first-line scan, so discovery stays cheap on hundreds of files. */
+/**
+ * Reads the working directory out of a transcript without parsing all of it.
+ *
+ * The window doubles rather than giving up, because a transcript can open with
+ * one enormous record: on this machine 9 of 187 do, and treating "no cwd in the
+ * first chunk" as "not this project" silently hid the newest session of all.
+ */
 function readSessionCwdSync(path: string): string | null {
-  // A transcript's cwd appears within the first few lines; read a small prefix.
-  const PREFIX_BYTES = 64 * 1024;
+  const FIRST_WINDOW = 64 * 1024;
+  const LAST_WINDOW = 8 * 1024 * 1024;
   try {
     const size = statSync(path).size;
-    if (size <= PREFIX_BYTES) {
-      return extractCwd(readFileSync(path, "utf8"));
-    }
+    if (size <= FIRST_WINDOW) return extractCwd(readFileSync(path, "utf8"), false);
+
     const fd = openSync(path, "r");
     try {
-      const buffer = Buffer.alloc(PREFIX_BYTES);
-      const read = readSync(fd, buffer, 0, PREFIX_BYTES, 0);
-      return extractCwd(buffer.subarray(0, read).toString("utf8"));
+      for (let window = FIRST_WINDOW; ; window *= 4) {
+        const wanted = Math.min(window, size);
+        const buffer = Buffer.alloc(wanted);
+        const read = readSync(fd, buffer, 0, wanted, 0);
+        const complete = wanted >= size;
+        const found = extractCwd(buffer.subarray(0, read).toString("utf8"), !complete);
+        if (found !== null || complete || window >= LAST_WINDOW) return found;
+      }
     } finally {
       closeSync(fd);
     }
@@ -58,8 +70,14 @@ function readSessionCwdSync(path: string): string | null {
   }
 }
 
-function extractCwd(text: string): string | null {
-  for (const line of text.split("\n")) {
+/**
+ * @param truncated whether the text ends mid-file, in which case the last line
+ * may be half a record and must not be read as a real path.
+ */
+function extractCwd(text: string, truncated: boolean): string | null {
+  const lines = text.split("\n");
+  const usable = truncated ? lines.slice(0, -1) : lines;
+  for (const line of usable) {
     const match = /"cwd"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(line);
     if (!match) continue;
     try {

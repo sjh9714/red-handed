@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { session } from "../fixtures/session-builder.js";
@@ -61,6 +61,39 @@ describe("sessionsForCwd", () => {
 
     const found = sessionsForCwd("/work/app", { claudeHome: home });
     expect(found[0]?.sessionId.startsWith("bbbbbbbb")).toBe(true);
+  });
+
+  // 9 of 187 real transcripts on this machine open with a very large first
+  // record, and one of them was newer than the session the CLI would otherwise
+  // have offered — so the default audit silently examined the wrong session.
+  test("finds a session whose opening record is enormous", () => {
+    const home = claudeHome();
+    const dir = join(home, "projects", flattenPath("/work/app"));
+    mkdirSync(dir, { recursive: true });
+    const path = join(dir, "99999999-9999-9999-9999-999999999999.jsonl");
+    const huge = JSON.stringify({ type: "attachment", blob: "x".repeat(200_000) });
+    const real = JSON.stringify({
+      type: "assistant",
+      cwd: "/work/app",
+      uuid: "u1",
+      timestamp: "2026-07-23T21:00:00.000Z",
+      message: { role: "assistant", content: [{ type: "text", text: "hello" }] },
+    });
+    writeFileSync(path, `${huge}\n${real}\n`);
+
+    const found = sessionsForCwd("/work/app", { claudeHome: home });
+    expect(found.map((s) => s.sessionId)).toContain("99999999-9999-9999-9999-999999999999");
+  });
+
+  test("does not claim a session that belongs to another directory", () => {
+    const home = claudeHome();
+    const dir = join(home, "projects", flattenPath("/work/app"));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "88888888-8888-8888-8888-888888888888.jsonl"),
+      `${JSON.stringify({ type: "assistant", cwd: "/somewhere/else", uuid: "u1" })}\n`,
+    );
+    expect(sessionsForCwd("/work/app", { claudeHome: home })).toHaveLength(0);
   });
 
   test("lists the subagent transcripts belonging to a session", () => {

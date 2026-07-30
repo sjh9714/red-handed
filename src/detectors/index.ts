@@ -6,6 +6,7 @@ import { errorSwallowing } from "./error-swallowing.js";
 import { hardcodedExpected } from "./hardcoded-expected.js";
 import { noVerify } from "./no-verify.js";
 import { skipOnly } from "./skip-only.js";
+import { testCensus } from "./test-census.js";
 
 /** Ordered by how much a reader should trust them. */
 export const DETECTORS: Detector[] = [
@@ -14,6 +15,7 @@ export const DETECTORS: Detector[] = [
   claimVsFail,
   claimNoRun,
   hardcodedExpected,
+  testCensus,
   configDisable,
   errorSwallowing,
 ];

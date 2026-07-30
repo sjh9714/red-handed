@@ -16,6 +16,9 @@ const MAX_OUTPUT_CHARS = 64_000;
 /** Edit strings are kept from the head; assertion-level edits are far smaller than this. */
 const MAX_STRING_CHARS = 16_000;
 
+/** timeout(1), SIGKILL and SIGTERM: the command was stopped, it did not decide anything. */
+const KILLED_EXIT_CODES = new Set([124, 137, 143]);
+
 const KNOWN_LINE_TYPES = new Set([
   "assistant",
   "user",
@@ -167,11 +170,15 @@ function commandOutcome(result: ToolResult | undefined): {
   const text = typeof result.raw === "string" ? result.raw : result.contentText;
   const match = /^(?:Error:\s*)?Exit code (\d+)/.exec(text);
   if (match) {
+    const rest = text.slice(match[0].length).replace(/^\n/, "");
+    const code = Number(match[1]);
     return {
-      stdout: tailCap(text.slice(match[0].length).replace(/^\n/, "")),
+      stdout: tailCap(rest),
       stderr: "",
-      exitCode: Number(match[1]),
-      interrupted: false,
+      exitCode: code,
+      // A command that was killed reports the signal that killed it, not a
+      // verdict on the code. Tests that ran out of time have not failed.
+      interrupted: /^Command timed out after/m.test(rest) || KILLED_EXIT_CODES.has(code),
       background: false,
     };
   }

@@ -1,4 +1,13 @@
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  accessSync,
+  constants,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 const HOOK_COMMAND = "npx --yes red-handed hook";
@@ -20,22 +29,79 @@ interface Settings {
   [key: string]: unknown;
 }
 
+export class HookError extends Error {}
+
 function settingsPath(claudeHome: string): string {
   return join(claudeHome, "settings.json");
 }
 
+/**
+ * Reads the settings file, refusing to guess.
+ *
+ * An absent file is an empty object; an unreadable one is an error. Treating
+ * the two the same is how a tool ends up writing a hooks-only file over
+ * someone's whole configuration and reporting success.
+ */
 function readSettings(path: string): Settings {
   if (!existsSync(path)) return {};
+  let raw: string;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-    return parsed !== null && typeof parsed === "object" ? (parsed as Settings) : {};
+    raw = readFileSync(path, "utf8");
+  } catch (error) {
+    throw new HookError(`cannot read ${path}: ${(error as Error).message}`);
+  }
+  if (raw.trim() === "") return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("not a JSON object");
+    }
+    return parsed as Settings;
   } catch {
-    return {};
+    throw new HookError(
+      `${path} is not valid JSON, so it has been left alone. Fix or move it, then try again.`,
+    );
   }
 }
 
+function stopGroups(settings: Settings): HookGroup[] {
+  const stop = settings.hooks?.Stop;
+  return Array.isArray(stop) ? stop : [];
+}
+
 function containsHook(groups: HookGroup[]): boolean {
-  return groups.some((group) => group.hooks?.some((h) => h.command?.includes(MARKER)));
+  return groups.some((group) =>
+    (Array.isArray(group?.hooks) ? group.hooks : []).some((h) => h?.command?.includes(MARKER)),
+  );
+}
+
+/** Keeps the first backup: it is the only copy of what the user had before. */
+function backupOnce(path: string): void {
+  if (!existsSync(path)) return;
+  const backup = `${path}.${MARKER}-backup`;
+  if (existsSync(backup)) return;
+  copyFileSync(path, backup);
+}
+
+/** Writes through a temporary file, so a failure can never truncate the original. */
+function writeAtomically(path: string, contents: string): void {
+  // Renaming over a read-only file succeeds on POSIX, because the permission
+  // that matters is the directory's. Someone who marked this file read-only
+  // meant it, so ask before going around them.
+  if (existsSync(path)) {
+    try {
+      accessSync(path, constants.W_OK);
+    } catch {
+      throw new HookError(`${path} is not writable, so it has been left alone.`);
+    }
+  }
+  const temporary = `${path}.${MARKER}-tmp`;
+  try {
+    writeFileSync(temporary, contents, { mode: 0o600 });
+    renameSync(temporary, path);
+  } catch (error) {
+    throw new HookError(`cannot write ${path}: ${(error as Error).message}`);
+  }
 }
 
 export interface HookResult {
@@ -47,55 +113,56 @@ export interface HookResult {
 /**
  * Adds an audit to the end of every session.
  *
- * Existing hooks are left exactly as they are — this machine already runs
- * several — and the previous settings are copied aside first.
+ * Existing hooks and every other setting are left exactly as they are, and the
+ * original file is copied aside before anything is written.
  */
-export function installHook(
-  claudeHome: string,
-  options: { command?: string } = {},
-): HookResult {
+export function installHook(claudeHome: string, options: { command?: string } = {}): HookResult {
   const path = settingsPath(claudeHome);
   const settings = readSettings(path);
-  const hooks = settings.hooks ?? {};
-  const stop = hooks.Stop ?? [];
+  const stop = stopGroups(settings);
 
-  if (containsHook(stop)) {
-    return { changed: false, message: "already installed", path };
+  if (containsHook(stop)) return { changed: false, message: "already installed", path };
+
+  try {
+    mkdirSync(claudeHome, { recursive: true });
+  } catch (error) {
+    throw new HookError(`cannot create ${claudeHome}: ${(error as Error).message}`);
   }
-  const command = options.command ?? HOOK_COMMAND;
-
-  if (existsSync(path)) copyFileSync(path, `${path}.red-handed-backup`);
-  else writeFileSync(`${path}.red-handed-backup`, JSON.stringify({ hooks: {} }, null, 2));
+  backupOnce(path);
 
   const updated: Settings = {
     ...settings,
     hooks: {
-      ...hooks,
-      Stop: [...stop, { hooks: [{ type: "command", command, timeout: 30 }] }],
+      ...(settings.hooks ?? {}),
+      Stop: [
+        ...stop,
+        { hooks: [{ type: "command", command: options.command ?? HOOK_COMMAND, timeout: 30 }] },
+      ],
     },
   };
-  writeFileSync(path, `${JSON.stringify(updated, null, 2)}\n`);
+  writeAtomically(path, `${JSON.stringify(updated, null, 2)}\n`);
   return { changed: true, message: "installed", path };
 }
 
 export function uninstallHook(claudeHome: string): HookResult {
   const path = settingsPath(claudeHome);
   const settings = readSettings(path);
-  const hooks = settings.hooks ?? {};
-  const stop = hooks.Stop ?? [];
+  const stop = stopGroups(settings);
   if (!containsHook(stop)) return { changed: false, message: "not installed", path };
 
-  if (existsSync(path)) copyFileSync(path, `${path}.red-handed-backup`);
+  backupOnce(path);
   const cleaned = stop
     .map((group) => ({
       ...group,
-      hooks: (group.hooks ?? []).filter((h) => !h.command?.includes(MARKER)),
+      hooks: (Array.isArray(group?.hooks) ? group.hooks : []).filter(
+        (h) => !h?.command?.includes(MARKER),
+      ),
     }))
-    .filter((group) => (group.hooks ?? []).length > 0);
+    .filter((group) => group.hooks.length > 0);
 
-  writeFileSync(
+  writeAtomically(
     path,
-    `${JSON.stringify({ ...settings, hooks: { ...hooks, Stop: cleaned } }, null, 2)}\n`,
+    `${JSON.stringify({ ...settings, hooks: { ...(settings.hooks ?? {}), Stop: cleaned } }, null, 2)}\n`,
   );
   return { changed: true, message: "removed", path };
 }

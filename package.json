@@ -13,9 +13,9 @@
   "author": "JinHyuk Sung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sjh9714/redhanded.git"
+    "url": "git+https://github.com/sjh9714/red-handed.git"
   },
-  "homepage": "https://github.com/sjh9714/redhanded",
+  "homepage": "https://github.com/sjh9714/red-handed",
   "type": "module",
   "bin": {
     "red-handed": "./dist/cli.js"

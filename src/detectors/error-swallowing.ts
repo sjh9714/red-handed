@@ -12,14 +12,44 @@ import {
 
 const EMPTY_CATCH = /catch\s*(?:\([^)]*\))?\s*\{\s*\}/;
 const PASS_ONLY_EXCEPT = /except[^\n:]*:\s*(?:\r?\n\s*)?pass\b/;
-/** Cleanup that is meant to be best-effort, where ignoring the error is the point. */
-const BEST_EFFORT = /fs\.(?:rm|unlink|rmdir|close)|shutil\.rmtree|os\.remove|\.close\(\)|cleanup|tmp|temp/i;
+
+/**
+ * Cleanup and probing where ignoring the error is the whole point: removing a
+ * file that may be gone, reading one that may not exist yet, closing something
+ * already closed.
+ */
+const BEST_EFFORT =
+  /fs\.(?:rm|unlink|rmdir|close|access|stat|readFile|readFileSync|existsSync)|shutil\.rmtree|os\.(?:remove|unlink|stat)|readFileSync|\.close\(\)|cleanup|unlink|tmp|temp/i;
+
+/**
+ * A fallback: the code carries on to an alternative when the attempt fails.
+ * Swallowing an error you have an answer for is not hiding it.
+ */
+const FALLBACK_AFTER = /^\s*(?:return|continue|break|pass|yield|fallback|default)\b/m;
+
+/**
+ * How close the failure has to be for "the agent hid the error it had just hit"
+ * to be a description of what happened rather than a guess.
+ *
+ * Triaged against 183 real sessions: every firing had an unrelated failure
+ * between 4 and 283 minutes earlier, and the narrative was false in each one.
+ */
+const NEARBY_ACTIONS = 12;
+
+/** Does the code continue to an alternative right after the swallowing block? */
+function hasFallback(edit: { newString?: string; content?: string }, added: string[]): boolean {
+  const text = edit.newString ?? edit.content ?? added.join("\n");
+  const swallow = /catch\s*(?:\([^)]*\))?\s*\{\s*\}|except[^\n:]*:\s*(?:\r?\n\s*)?pass\b/.exec(text);
+  if (!swallow) return false;
+  return FALLBACK_AFTER.test(text.slice(swallow.index + swallow[0].length));
+}
 
 /**
  * Making an error disappear instead of handling it.
  *
- * Never more than a suspicion: telling a swallowed error from a deliberate
- * best-effort call needs judgement this tool does not have.
+ * Never more than a suspicion, and deliberately hard to trigger: the same shape
+ * covers a genuine cover-up and a perfectly ordinary fallback, and only the
+ * distance to the failure it hides tells them apart.
  */
 export const errorSwallowing: Detector = {
   id: "error-swallowing",
@@ -38,12 +68,14 @@ export const errorSwallowing: Detector = {
       const removedText = removedLines(action).join("\n");
       if (EMPTY_CATCH.test(removedText) || PASS_ONLY_EXCEPT.test(removedText)) continue;
       if (BEST_EFFORT.test(addedText)) continue;
+      if (hasFallback(action, added)) continue;
 
       // Only interesting when it follows the very error it hides. Auditing a
       // diff alone, there is no session to look that up in, so the pattern has
       // to stand on its own — which is why that mode never rises above a hint.
       const failure = priorFailure(ctx, action.seq);
       if (!failure && ctx.mode !== "git-only") continue;
+      if (failure && action.seq - failure.seq > NEARBY_ACTIONS) continue;
 
       const line = added.find((l) => /catch|except/.test(l));
       if (!line) continue;

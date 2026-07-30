@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { buildContext } from "../correlate/context.js";
-import { runDetectors } from "../detectors/index.js";
+import { DETECTORS, runDetectors } from "../detectors/index.js";
 import { normalize } from "../session/normalize.js";
 import type { AuditReport } from "../types.js";
 
@@ -236,6 +236,6 @@ export async function demo(lang?: string): Promise<AuditReport> {
     branch: "main",
     mode: "session",
     findings,
-    detectorCount: 7,
+    detectorCount: DETECTORS.length,
   };
 }

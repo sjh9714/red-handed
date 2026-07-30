@@ -2,13 +2,7 @@ import { classifyTestCommand } from "../session/testruns.js";
 import { sanitizeForClassification } from "../session/shell.js";
 import { editsBefore, lastTestRunBefore } from "../correlate/timeline.js";
 import type { Detector, DetectorContext, Finding } from "../types.js";
-
-/**
- * A command that is about testing in some way this tool cannot read — a
- * project's own runner, a browser check, a verification script. Its presence is
- * enough to stop short of calling the claim a lie.
- */
-const TEST_SHAPED = /\btests?\b|\bspec\b|pytest|vitest|jest|mocha|테스트/i;
+import { TEST_SHAPED } from "./helpers.js";
 
 /** Saying the tests pass without having run any. */
 export const claimNoRun: Detector = {
@@ -46,8 +40,10 @@ export const claimNoRun: Detector = {
           {
             ts: claim.ts,
             kind: "note",
-            excerpt: `no test command ran in this session (${commandCount} commands, subagent transcripts included)`,
-            noteKey: "note.no-test-run",
+            excerpt: somethingTestShapedRan
+              ? `a test-shaped command ran, but no result could be read from it (${commandCount} commands, subagent transcripts included)`
+              : `no test command ran in this session (${commandCount} commands, subagent transcripts included)`,
+            noteKey: somethingTestShapedRan ? "note.no-readable-run" : "note.no-test-run",
             noteVars: { commands: String(commandCount) },
           },
         ],

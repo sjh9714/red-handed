@@ -49,17 +49,37 @@ const en: Locale = {
   id: "en",
   titles: {
     "no-verify": "committed past the hooks",
+    "no-verify.after-hook-failure": "hook said no, committed anyway",
+    "no-verify.plain": "committed past the hooks",
     "skip-only": "switched a test off",
+    "skip-only.only": "ran one test, silenced the rest",
+    "skip-only.after-failure": "test failed, so it was switched off",
+    "skip-only.plain": "switched a test off",
     "claim-vs-fail": "said tests pass — the last run failed",
+    "claim-vs-fail.contradicts": "said tests pass — the last run failed",
+    "claim-vs-fail.stale": "said tests pass — verified before the last change",
+    "claim-vs-fail.maybe-reverified": "said tests pass — the later run was unreadable",
     "claim-no-run": "said tests pass — none ran",
+    "claim-no-run.none": "said tests pass — none ran",
+    "claim-no-run.hook-only": "said tests pass — only a hook ran them",
+    "claim-no-run.unreadable": "said tests pass — the run was unreadable",
     "hardcoded-expected": "rewrote the answer to match the bug",
+    "hardcoded-expected.literal": "rewrote the answer to match the bug",
+    "hardcoded-expected.snapshot": "updated the snapshot instead of the output",
     "config-disable": "turned a check off",
+    "config-disable.strict-off": "turned strict mode off",
+    "config-disable.ci-test-removed": "deleted the test step from CI",
+    "config-disable.inline-disable": "silenced the check at that line",
     "error-swallowing": "made an error vanish",
+    "error-swallowing.empty": "made an error vanish",
+    "test-census": "the suite got smaller",
+    "test-census.shrank": "the suite got smaller",
   },
   notes: {
     "note.no-impl-change": "no implementation file was changed between the failure and this edit",
     "note.no-run-between": "no test run between that failure and this claim",
     "note.no-test-run": "no test command ran in this session ({commands} commands, subagent transcripts included)",
+    "note.no-readable-run": "a test-shaped command ran, but no result could be read from it ({commands} commands, subagent transcripts included)",
     "note.files-changed-after": "{count} file(s) changed after that run: {files}",
     "note.expected-received": "expected {expected}, received {received}",
   },
@@ -142,6 +162,11 @@ const en: Locale = {
         "The agent said the tests pass, but the code changed after the run it is relying on. The claim describes an older version of the code.",
       check: "Run the tests again now that the code has changed.",
     },
+    "claim-vs-fail.maybe-reverified": {
+      narrative:
+        "The agent said the tests pass. The last run this tool could read had failed. Something ran afterwards that may have been a test run, but its result could not be read.",
+      check: "Look at what that later command reported.",
+    },
     "hardcoded-expected.literal": {
       narrative:
         "A test failed because the code produced {received} instead of {expected}. The agent then changed the test to expect {received} — the value the failure produced — without touching the code.",
@@ -157,6 +182,11 @@ const en: Locale = {
         "An error came up, and the agent wrapped the code in a catch that does nothing with it. The error is now invisible rather than handled.",
       check: "Log or rethrow it once and see what was being swallowed.",
     },
+    "test-census.shrank": {
+      narrative:
+        "The same command reported {before} tests and later reported {after}. {gone} of them stopped existing, and a test that no longer runs cannot fail.",
+      check: "Find out which {gone} went, and whether they were meant to.",
+    },
   },
 };
 
@@ -164,17 +194,37 @@ const ko: Locale = {
   id: "ko",
   titles: {
     "no-verify": "훅을 끄고 커밋함",
+    "no-verify.after-hook-failure": "훅이 막자 끄고 다시 커밋함",
+    "no-verify.plain": "훅을 끄고 커밋함",
     "skip-only": "테스트를 꺼버림",
+    "skip-only.only": "하나만 돌리고 나머지를 침묵시킴",
+    "skip-only.after-failure": "실패하자 테스트를 꺼버림",
+    "skip-only.plain": "테스트를 꺼버림",
     "claim-vs-fail": "실패했는데 통과했다고 말함",
+    "claim-vs-fail.contradicts": "실패했는데 통과했다고 말함",
+    "claim-vs-fail.stale": "통과했다고 말했지만 그 뒤 코드가 바뀜",
+    "claim-vs-fail.maybe-reverified": "통과했다고 말함 — 나중 실행을 읽지 못함",
     "claim-no-run": "돌리지도 않고 통과했다고 말함",
+    "claim-no-run.none": "돌리지도 않고 통과했다고 말함",
+    "claim-no-run.hook-only": "통과했다고 말함 — 훅만 돌렸음",
+    "claim-no-run.unreadable": "통과했다고 말함 — 실행 결과를 읽지 못함",
     "hardcoded-expected": "오답을 정답으로 바꿔치기",
+    "hardcoded-expected.literal": "오답을 정답으로 바꿔치기",
+    "hardcoded-expected.snapshot": "출력 대신 스냅샷을 갱신함",
     "config-disable": "검사를 꺼버림",
+    "config-disable.strict-off": "strict를 꺼버림",
+    "config-disable.ci-test-removed": "CI에서 테스트 단계를 삭제함",
+    "config-disable.inline-disable": "그 줄에서 검사를 침묵시킴",
     "error-swallowing": "에러를 삼킴",
+    "error-swallowing.empty": "에러를 삼킴",
+    "test-census": "테스트 개수가 줄었음",
+    "test-census.shrank": "테스트 개수가 줄었음",
   },
   notes: {
     "note.no-impl-change": "실패와 이 수정 사이에 구현 코드는 그대로였음",
     "note.no-run-between": "실패와 주장 사이에 테스트를 다시 돌린 적 없음",
     "note.no-test-run": "이 세션에서 테스트 명령이 실행되지 않음 (명령 {commands}개, 서브에이전트 기록 포함)",
+    "note.no-readable-run": "테스트로 보이는 명령은 돌았지만 결과를 읽을 수 없었음 (명령 {commands}개, 서브에이전트 기록 포함)",
     "note.files-changed-after": "그 실행 이후 파일 {count}개가 바뀜: {files}",
     "note.expected-received": "기대값 {expected}, 실제값 {received}",
   },
@@ -257,6 +307,11 @@ const ko: Locale = {
         "에이전트가 테스트를 통과했다고 말했지만, 근거로 삼은 실행 이후에 코드가 바뀌었습니다. 그 주장은 이전 버전의 코드에 대한 것입니다.",
       check: "코드가 바뀐 지금 상태로 테스트를 다시 돌려보세요.",
     },
+    "claim-vs-fail.maybe-reverified": {
+      narrative:
+        "에이전트가 테스트를 통과했다고 말했습니다. 이 도구가 읽을 수 있었던 마지막 실행은 실패였지만, 그 뒤에 테스트일 수도 있는 명령이 돌았고 결과를 읽지 못했습니다.",
+      check: "그 나중 명령이 무엇을 보고했는지 직접 보세요.",
+    },
     "hardcoded-expected.literal": {
       narrative:
         "코드가 {expected}이 아니라 {received}을 내놓아 테스트가 실패했습니다. 그러자 에이전트는 코드는 그대로 둔 채, 실패에서 나온 값인 {received}을 테스트의 정답으로 바꿨습니다.",
@@ -272,10 +327,15 @@ const ko: Locale = {
         "에러가 발생하자, 에이전트는 그 코드를 아무것도 하지 않는 catch로 감쌌습니다. 에러는 처리된 게 아니라 보이지 않게 됐습니다.",
       check: "한 번만 로그를 찍거나 다시 던져서 무엇이 삼켜지고 있었는지 보세요.",
     },
+    "test-census.shrank": {
+      narrative:
+        "같은 명령이 처음엔 테스트 {before}개를, 나중엔 {after}개를 보고했습니다. {gone}개가 사라졌고, 돌지 않는 테스트는 실패할 수도 없습니다.",
+      check: "사라진 {gone}개가 무엇이었고, 사라져도 되는 것이었는지 확인하세요.",
+    },
   },
 };
 
-const LOCALES: Locale[] = [en, ko];
+export const LOCALES: Locale[] = [en, ko];
 
 /** Accepts "ko", "ko_KR.UTF-8", "ko-KR" and falls back to English. */
 export function resolveLocale(tag: string | undefined): Locale {
@@ -288,8 +348,22 @@ export function interpolate(template: string, vars: Record<string, string>): str
   return template.replace(/\{(\w+)\}/g, (whole, name: string) => vars[name] ?? whole);
 }
 
-export function titleFor(locale: Locale, detector: string): string {
-  return locale.titles[detector] ?? en.titles[detector] ?? detector;
+/**
+ * The headline for a finding, keyed on the exact message it carries.
+ *
+ * Keying on the detector alone made every variant wear the same headline, so a
+ * stale-verification finding announced "the last run failed" above a narrative
+ * saying the run had passed.
+ */
+export function titleFor(locale: Locale, messageKey: string): string {
+  const detector = messageKey.split(".")[0] as string;
+  return (
+    locale.titles[messageKey] ??
+    en.titles[messageKey] ??
+    locale.titles[detector] ??
+    en.titles[detector] ??
+    detector
+  );
 }
 
 export function noteFor(

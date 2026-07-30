@@ -30,7 +30,7 @@ export function renderMarkdown(report: AuditReport, options: MarkdownOptions = {
     const message = messageFor(locale, finding.messageKey, finding.messageVars);
     const tier = finding.tier === "CAUGHT" ? locale.ui.caught : locale.ui.suspicious;
     const where = finding.code ? ` — \`${finding.code.file}:${finding.code.line}\`` : "";
-    lines.push(`### ${tier} · ${titleFor(locale, finding.detector)}${where}`);
+    lines.push(`### ${tier} · ${titleFor(locale, finding.messageKey)}${where}`);
     lines.push("");
     lines.push(message.narrative);
     lines.push("");

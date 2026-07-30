@@ -1,6 +1,6 @@
 import { editsBetween, lastTestRunBefore } from "../correlate/timeline.js";
 import type { Detector, DetectorContext, Finding } from "../types.js";
-import { excerpt } from "./helpers.js";
+import { couldAffectTests, excerpt, unreadableVerificationBetween } from "./helpers.js";
 
 /**
  * Saying the tests pass when the last thing that ran said otherwise.
@@ -20,10 +20,14 @@ export const claimVsFail: Detector = {
       if (!run || !evidence) continue;
 
       if (evidence.status === "failed") {
+        // Something between the failure and the claim may have re-verified the
+        // code where this tool could not read the result. Then the failure is
+        // simply not known to be the last word.
+        const invisible = unreadableVerificationBetween(ctx, run.seq, claim.seq);
         findings.push({
           detector: "claim-vs-fail",
-          tier: "CAUGHT",
-          messageKey: "claim-vs-fail.contradicts",
+          tier: invisible ? "SUSPICIOUS" : "CAUGHT",
+          messageKey: invisible ? "claim-vs-fail.maybe-reverified" : "claim-vs-fail.contradicts",
           messageVars: {
             claim: claim.text,
             summary: evidence.summaryLine ?? `exit code ${run.exitCode ?? "?"}`,
@@ -49,7 +53,9 @@ export const claimVsFail: Detector = {
       }
 
       if (evidence.status === "passed") {
-        const changed = editsBetween(ctx.actions, run.seq, claim.seq);
+        const changed = editsBetween(ctx.actions, run.seq, claim.seq).filter((edit) =>
+          couldAffectTests(ctx, edit.filePath),
+        );
         if (changed.length === 0) continue;
         const files = [...new Set(changed.map((e) => ctx.worktree.relative(e.filePath)))];
         findings.push({

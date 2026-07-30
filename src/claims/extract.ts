@@ -1,3 +1,4 @@
+import { maskSecrets } from "../detectors/helpers.js";
 import type { AgentAction, Claim, ClaimFamily } from "../types.js";
 import { LOCALE_PACKS } from "./patterns.js";
 
@@ -39,7 +40,7 @@ function sentences(text: string): string[] {
 }
 
 function quote(sentence: string): string {
-  const collapsed = sentence.replace(/\s+/g, " ").trim();
+  const collapsed = maskSecrets(sentence).replace(/\s+/g, " ").trim();
   return collapsed.length > MAX_QUOTE ? `${collapsed.slice(0, MAX_QUOTE)}...` : collapsed;
 }
 

@@ -1,3 +1,5 @@
+import { classifyTestCommand } from "../session/testruns.js";
+import { sanitizeForClassification } from "../session/shell.js";
 import type {
   CodeAnchor,
   CommandAction,
@@ -8,8 +10,94 @@ import type {
 
 const MAX_EXCERPT = 200;
 
+/**
+ * Credentials, masked before anything is quoted.
+ *
+ * Findings quote commands and file contents out of a transcript, and the help
+ * text invites people to paste that into a pull request. Over-masking costs a
+ * reader a little context; under-masking publishes someone's key.
+ */
+const SECRETS: RegExp[] = [
+  // The prefix must end in an underscore, so AWS_SECRET_ACCESS_KEY is caught
+  // while MONKEY=banana is left alone.
+  /\b(?:\w*_)?(?:TOKEN|SECRET|KEY|PASSWORD|PASSWD|CREDENTIAL)\w*\s*=\s*\S+/gi,
+  /\b(?:gh[pousr]_|sk-|xox[baprs]-|AKIA|ASIA)[A-Za-z0-9_-]{8,}/g,
+  /\bBearer\s+\S+/gi,
+  /:\/\/[^/\s:@]+:[^/\s@]+@/g,
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+];
+
+export function maskSecrets(text: string): string {
+  let out = text;
+  for (const pattern of SECRETS) {
+    out = out.replace(pattern, (match) => {
+      // Keep the shape of an assignment so the reader still sees what leaked.
+      const name = /^([A-Za-z_]\w*)\s*=/.exec(match);
+      if (name) return `${name[1]}=<REDACTED>`;
+      if (match.startsWith("Bearer")) return "Bearer <REDACTED>";
+      if (match.startsWith("://")) return "://<REDACTED>@";
+      return "<REDACTED>";
+    });
+  }
+  return out;
+}
+
+/**
+ * A command that is about testing in some way this tool cannot read: a project's
+ * own runner, a build tool's check target, a browser suite. Deliberately broad,
+ * because its only job is to stop a finding short of certainty.
+ */
+export const TEST_SHAPED =
+  /\btests?\b|spec|pytest|vitest|jest|mocha|phpunit|tox\b|nox\b|ctest|busted|gradlew|gradle|mvnw|mvn\b|bazel|turbo|verify|check|테스트/i;
+
+/**
+ * Whether something between two points may have verified the code without this
+ * tool being able to read the result.
+ *
+ * If so, no finding in that window can be certain: an unrecognised runner or a
+ * hook that ran the suite is verification that happened, whatever we could parse.
+ */
+export function unreadableVerificationBetween(
+  ctx: DetectorContext,
+  fromSeq: number,
+  toSeq: number,
+): boolean {
+  for (const action of ctx.actions) {
+    if (action.seq <= fromSeq || action.seq >= toSeq) continue;
+    if (action.kind === "hook") {
+      if (action.command !== "" && classifyTestCommand(action.command, ctx.packageScripts)) {
+        return true;
+      }
+      continue;
+    }
+    if (action.kind !== "command") continue;
+    // A run we could read is accounted for elsewhere; only the unreadable matter.
+    if (action.testRun) continue;
+    if (TEST_SHAPED.test(sanitizeForClassification(action.command))) return true;
+  }
+  return false;
+}
+
+/** Files whose contents cannot change what a test does. */
+const DOCUMENTATION = /\.(?:md|mdx|markdown|txt|rst|adoc|png|jpe?g|gif|svg|webp|ico|pdf)$/i;
+
+/**
+ * Whether editing this file could plausibly change a test result.
+ *
+ * A note or a README cannot, and neither can a file outside the repository —
+ * telling someone their claim is stale because a markdown file changed says
+ * this tool does not know what code is.
+ */
+export function couldAffectTests(ctx: DetectorContext, filePath: string): boolean {
+  if (DOCUMENTATION.test(filePath)) return false;
+  if (ctx.repoRoot === null) return true;
+  const root = ctx.repoRoot.endsWith("/") ? ctx.repoRoot : `${ctx.repoRoot}/`;
+  return filePath === ctx.repoRoot || filePath.startsWith(root);
+}
+
+/** The one place every quoted command, edit and output passes through. */
 export function excerpt(text: string): string {
-  const collapsed = text.replace(/\s+/g, " ").trim();
+  const collapsed = maskSecrets(text).replace(/\s+/g, " ").trim();
   return collapsed.length > MAX_EXCERPT ? `${collapsed.slice(0, MAX_EXCERPT)}...` : collapsed;
 }
 

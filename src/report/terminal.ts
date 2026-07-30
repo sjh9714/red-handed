@@ -68,7 +68,7 @@ function renderFinding(
   const lines: string[] = [];
   // Title first, in plain words; the id after it is what --detectors accepts.
   lines.push(
-    `  ${tier}  ${paint.bold(titleFor(locale, finding.detector))}  ${paint.dim(finding.detector)}${where ? `  ${paint.location(where)}` : ""}`,
+    `  ${tier}  ${paint.bold(titleFor(locale, finding.messageKey))}  ${paint.dim(finding.detector)}${where ? `  ${paint.location(where)}` : ""}`,
   );
 
   const bar = paint.dim(BAR);

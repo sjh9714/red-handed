@@ -38,6 +38,13 @@ const RUNNERS: Record<string, TestFramework> = {
   unittest: "generic",
   tap: "generic",
   ava: "generic",
+  rspec: "generic",
+  phpunit: "generic",
+  behave: "generic",
+  ctest: "generic",
+  busted: "generic",
+  tox: "generic",
+  nox: "generic",
 };
 
 /** Build tools where a specific subcommand is the test run. */
@@ -47,11 +54,18 @@ const SUBCOMMAND_RUNNERS: Record<string, string[]> = {
   cargo: ["test", "nextest"],
   deno: ["test"],
   dotnet: ["test"],
-  mvn: ["test"],
-  gradle: ["test"],
+  mvn: ["test", "verify"],
+  mvnw: ["test", "verify"],
+  gradle: ["test", "check"],
+  gradlew: ["test", "check"],
   swift: ["test"],
   rake: ["test", "spec"],
+  composer: ["test"],
+  mix: ["test"],
 };
+
+/** Launchers that run another command with the project's dependencies loaded. */
+const EXEC_LAUNCHERS = new Set(["bundle", "poetry", "pipenv", "pdm", "rye", "hatch"]);
 
 /**
  * Project-specific test scripts. Real sessions run these constantly, and not
@@ -195,7 +209,16 @@ function matchSegment(
     return matchSegment(rest.join(" "), scripts, depth + 1);
   }
 
-  const subcommands = SUBCOMMAND_RUNNERS[head];
+  // `./gradlew test`, `./mvnw verify`: the launcher lives in the repository.
+  const headBare = head.replace(/^.*\//, "");
+
+  if (EXEC_LAUNCHERS.has(headBare) && depth < 3) {
+    const rest = tokens.slice(index + 1);
+    if (rest[0] !== "exec" && rest[0] !== "run") return null;
+    return matchSegment(rest.slice(1).join(" "), scripts, depth + 1);
+  }
+
+  const subcommands = SUBCOMMAND_RUNNERS[headBare];
   if (subcommands) {
     const sub = tokens[index + 1];
     if (sub === undefined || !subcommands.includes(sub)) return null;
@@ -448,6 +471,10 @@ export function detectTestRun(
       scope: info.scope,
     };
   }
+
+  // A backgrounded command started a run; it did not report one. Scoring its
+  // empty output as a pass would invent a verification that never happened.
+  if (action.background) return undefined;
 
   let status: TestRunEvidence["status"] = "unknown";
   if (

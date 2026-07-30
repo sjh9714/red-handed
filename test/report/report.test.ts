@@ -4,7 +4,7 @@ import { renderTerminal } from "../../src/report/terminal.js";
 import { renderJson } from "../../src/report/json.js";
 import { renderMarkdown } from "../../src/report/markdown.js";
 import { exitCodeFor } from "../../src/report/exit-code.js";
-import { resolveLocale } from "../../src/report/messages.js";
+import { LOCALES, resolveLocale, titleFor } from "../../src/report/messages.js";
 import type { AuditReport, Finding } from "../../src/types.js";
 
 const caught: Finding = {
@@ -115,6 +115,34 @@ describe("terminal report", () => {
   test("keeps the detector id visible for --detectors, after the title", () => {
     const text = renderTerminal(report(), { color: false, lang: "en" });
     expect(text).toContain("hardcoded-expected");
+  });
+
+  // The title used to be keyed on the detector id, so every variant of a
+  // detector's message wore the same headline — including one that asserted a
+  // failure while the narrative underneath described a passing run.
+  test("the title matches the finding, not just the detector", () => {
+    const stale = {
+      ...caught,
+      detector: "claim-vs-fail",
+      tier: "SUSPICIOUS" as const,
+      messageKey: "claim-vs-fail.stale",
+      messageVars: { claim: "All tests pass.", files: "src/cart.ts", count: "1" },
+    };
+    const text = renderTerminal(report({ findings: [stale] }), { color: false, lang: "en" });
+    expect(text).not.toContain("the last run failed");
+    expect(text).toContain("verified before the last change");
+  });
+
+  test("every message this tool can print has a title in every language", () => {
+    let checked = 0;
+    for (const locale of LOCALES) {
+      for (const key of Object.keys(locale.messages)) {
+        // A missing title falls through to the key itself, which is the bug.
+        expect(titleFor(locale, key), `${locale.id} is missing a title for ${key}`).not.toBe(key);
+        checked += 1;
+      }
+    }
+    expect(checked).toBeGreaterThan(20);
   });
 
   test("falls back to English for a language it does not have", () => {
