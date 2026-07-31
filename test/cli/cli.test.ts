@@ -235,3 +235,18 @@ describe("red-handed install-hook", () => {
     expect(commands).toEqual(["existing-hook.sh"]);
   });
 });
+
+describe("--version", () => {
+  // This drifted for four releases: the constant said 0.1.2 while package.json
+  // said 0.1.6. A tool whose whole subject is claims that do not match reality
+  // has no business shipping one, so the check is wired to the manifest rather
+  // than to a second hand-maintained string.
+  test("says what package.json says", async () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    ) as { version: string };
+    let out = "";
+    await main(["--version"], { out: (t) => { out += t; }, err: () => {}, env: {} });
+    expect(out.trim()).toBe(manifest.version);
+  });
+});

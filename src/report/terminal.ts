@@ -7,6 +7,15 @@ export interface TerminalOptions {
   color?: boolean;
   lang?: string;
   columns?: number;
+  /**
+   * Title and evidence only.
+   *
+   * The full report explains itself because someone asked it a question. In a
+   * CI log, a hook notice or a screenshot nobody asked, and the prose is the
+   * first thing that stops being read. What survives is what can be checked:
+   * the timestamps and the quoted line.
+   */
+  compact?: boolean;
 }
 
 const BAR = "│";
@@ -59,6 +68,7 @@ function renderFinding(
   locale: Locale,
   paint: Paint,
   columns: number,
+  compact = false,
 ): string[] {
   const message = messageFor(locale, finding.messageKey, finding.messageVars);
   const tierText = finding.tier === "CAUGHT" ? locale.ui.caught : locale.ui.suspicious;
@@ -70,6 +80,14 @@ function renderFinding(
   lines.push(
     `  ${tier}  ${paint.bold(titleFor(locale, finding.messageKey))}  ${paint.dim(finding.detector)}${where ? `  ${paint.location(where)}` : ""}`,
   );
+
+  if (compact) {
+    for (const item of finding.evidence) {
+      lines.push(...renderEvidence(item, "", paint, columns, locale));
+    }
+    lines.push("");
+    return lines;
+  }
 
   const bar = paint.dim(BAR);
   for (const line of wrapText(message.narrative, columns - 4)) {
@@ -113,7 +131,7 @@ function renderEvidence(
     const wrapped = wrapText(raw, columns - 14);
     for (const [inner, line] of wrapped.entries()) {
       const prefix = index === 0 && inner === 0 ? stamp : " ".repeat(8);
-      out.push(`  ${bar} ${prefix}  ${line}`);
+      out.push(bar === "" ? `    ${prefix}  ${line}` : `  ${bar} ${prefix}  ${line}`);
     }
   }
   return out;
@@ -156,13 +174,13 @@ export function renderTerminal(report: AuditReport, options: TerminalOptions = {
 
   if (report.findings.length === 0) {
     lines.push(`  ${locale.ui.clean}`);
-    lines.push(`  ${paint.dim(locale.ui.cleanHint)}`);
+    if (!options.compact) lines.push(`  ${paint.dim(locale.ui.cleanHint)}`);
     lines.push("");
     return lines.join("\n");
   }
 
   for (const finding of report.findings) {
-    lines.push(...renderFinding(finding, locale, paint, columns));
+    lines.push(...renderFinding(finding, locale, paint, columns, options.compact));
   }
 
   const verdict = caught.length > 0 ? locale.ui.verdictCaught : locale.ui.verdictSuspicious;

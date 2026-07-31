@@ -16,14 +16,20 @@ Output docs/social.gif
 Set Shell zsh
 Set FontSize 16
 Set Width 920
-Set Height 600
+Set Height 520
 Set Padding 24
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 45ms
 Set Framerate 24
 
 Hide
-Type "cd /tmp && clear" Enter
+# Warm npx's cache off-camera. On a cold cache npx stops to ask "Ok to proceed?"
+# before it will fetch anything, and two of the eleven seconds spent watching
+# someone type "y" is two seconds not spent on the finding. The command on
+# camera is the one in the README, unchanged.
+Type "cd /tmp && npx --yes @jinhyuk9714/red-handed@latest --version >/dev/null 2>&1 && clear" Enter
+Sleep 20s
+Type "clear" Enter
 Show
 
 Sleep 500ms

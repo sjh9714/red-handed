@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from "node:module";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { audit } from "./commands/audit.js";
@@ -15,7 +16,12 @@ import { DETECTORS } from "./detectors/index.js";
 import { renderCoverage } from "./report/coverage.js";
 import type { AuditReport, SessionInfo } from "./types.js";
 
-const VERSION = "0.1.2";
+// Read from the manifest rather than kept as a second copy. The hand-written
+// constant this replaces said 0.1.2 while the package said 0.1.6, which is
+// exactly the kind of claim this tool exists to catch.
+const VERSION = (
+  createRequire(import.meta.url)("../package.json") as { version: string }
+).version;
 
 export interface CliIO {
   out(text: string): void;
@@ -49,6 +55,7 @@ Options
   --lang <code>         report language: en, ko
   --json                machine-readable output
   --md                  markdown, for pasting into a pull request
+  --compact             title and evidence only, for CI logs and screenshots
   --quiet               print only when something was found
   --no-color            plain text
   --since <days>        with stats, only sessions from the last N days
@@ -71,6 +78,7 @@ interface ParsedArgs {
   failOn: FailOn;
   lang?: string;
   format: "terminal" | "json" | "md";
+  compact: boolean;
   quiet: boolean;
   color: boolean;
   sinceDays?: number;
@@ -102,6 +110,7 @@ function parseArgs(argv: string[], env: Record<string, string | undefined>): Par
     gitOnly: false,
     failOn: "caught",
     format: "terminal",
+    compact: false,
     quiet: false,
     color: env.NO_COLOR === undefined || env.NO_COLOR === "",
     cwd: process.cwd(),
@@ -168,6 +177,9 @@ function parseArgs(argv: string[], env: Record<string, string | undefined>): Par
       case "--markdown":
         args.format = "md";
         break;
+      case "--compact":
+        args.compact = true;
+        break;
       case "--quiet":
       case "-q":
         args.quiet = true;
@@ -198,6 +210,13 @@ function parseArgs(argv: string[], env: Record<string, string | undefined>): Par
       default:
         throw new UsageError(`unknown option: ${arg}`);
     }
+  }
+
+  // --compact trims prose out of the human-readable report. JSON and markdown
+  // are already shaped for a machine and a pull request, so asking for both is
+  // asking for two different things at once.
+  if (args.compact && args.format !== "terminal") {
+    throw new UsageError(`--compact cannot be combined with --${args.format === "json" ? "json" : "md"}`);
   }
 
   return args;
@@ -247,7 +266,7 @@ async function runAsHook(io: CliIO, lang: string | undefined): Promise<number> {
 function renderReport(report: AuditReport, args: ParsedArgs, lang: string | undefined): string {
   if (args.format === "json") return renderJson(report);
   if (args.format === "md") return renderMarkdown(report, { lang });
-  return renderTerminal(report, { color: args.color, lang });
+  return renderTerminal(report, { color: args.color, lang, compact: args.compact });
 }
 
 export async function main(argv: string[], io: CliIO): Promise<number> {
