@@ -41,6 +41,8 @@ export interface Locale {
     gitOnlyNote: string;
     sessionsScanned: string;
     demoNote: string;
+    /** Same note, when --detectors or --exclude means only some checks are shown. */
+    demoNoteFiltered: string;
   };
   messages: Record<string, Message>;
 }
@@ -101,6 +103,7 @@ const en: Locale = {
     gitOnlyNote: "diff only — no session transcript, so nothing here is certain.",
     sessionsScanned: "sessions scanned",
     demoNote: "A made-up session, so every check has something to show. None of this is your code.",
+    demoNoteFiltered: "A made-up session, showing the checks you asked for. None of this is your code.",
   },
   messages: {
     "no-verify.after-hook-failure": {
@@ -259,6 +262,7 @@ const ko: Locale = {
     gitOnlyNote: "변경분만 봤습니다 — 세션 기록이 없어 확정할 수 있는 건 없습니다.",
     sessionsScanned: "검사한 세션",
     demoNote: "모든 검사가 걸리도록 지어낸 세션입니다. 당신의 코드는 하나도 들어있지 않습니다.",
+    demoNoteFiltered: "지어낸 세션에서 요청하신 검사만 보여드립니다. 당신의 코드는 하나도 들어있지 않습니다.",
   },
   messages: {
     "no-verify.after-hook-failure": {

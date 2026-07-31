@@ -41,6 +41,24 @@ describe("red-handed demo", () => {
     for (const finding of parsed.findings) expect(finding.detector).toBe("claim-vs-fail");
   });
 
+  // The demo's own header is a claim about the demo, and this tool has no
+  // business making one it does not keep. With --detectors it is showing one
+  // check, not every check.
+  test("does not promise every check when only one was asked for", async () => {
+    const { out } = await runDemo(["--detectors", "claim-vs-fail"]);
+    expect(out).not.toMatch(/every check/i);
+    expect(out).toMatch(/made-up|invented|not your code/i);
+  });
+
+  test("still promises every check when none were filtered out", async () => {
+    expect((await runDemo()).out).toMatch(/every check/i);
+  });
+
+  test("says the same thing in Korean", async () => {
+    const { out } = await runDemo(["--lang", "ko", "--detectors", "claim-vs-fail"]);
+    expect(out).not.toContain("모든 검사가 걸리도록");
+  });
+
   test("the made-up agent speaks Korean in the Korean demo", async () => {
     const { out } = await runDemo(["--lang", "ko"]);
     expect(out).toContain("테스트 34개 전부 통과");

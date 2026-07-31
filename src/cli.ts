@@ -305,7 +305,9 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
   if (args.command === "demo") {
     const report = await demo({ lang, detectors: args.detectors, exclude: args.exclude });
     if (args.format === "terminal") {
-      io.out(`\n  ${resolveLocale(lang).ui.demoNote}\n`);
+      const ui = resolveLocale(lang).ui;
+      const filtered = Boolean(args.detectors?.length) || Boolean(args.exclude?.length);
+      io.out(`\n  ${filtered ? ui.demoNoteFiltered : ui.demoNote}\n`);
     }
     io.out(renderReport(report, args, lang));
     return exitCodeFor(report.findings, args.failOn);

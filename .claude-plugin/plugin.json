@@ -1,6 +1,6 @@
 {
   "name": "red-handed",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Reads the Claude Code session transcripts under ~/.claude/projects for the current project, lines them up against the repository's git state, and reports where the agent's claims are not supported by its own record: a \"tests pass\" message with no test run behind it, a claim made right after the last run failed, an expected value rewritten to match a failure, a test switched off, an assertion replaced by one that cannot fail, a commit made past a rejecting hook, a suite that quietly got smaller. Every finding quotes the timestamp and the line it came from. Runs a local CLI over local files only. It makes no network calls, sends no telemetry and calls no model, so the same session always produces the same answer.",
   "author": {
     "name": "JinHyuk Sung",
