@@ -14,10 +14,10 @@
 Output docs/social.gif
 
 Set Shell zsh
-Set FontSize 16
-Set Width 920
-Set Height 520
-Set Padding 24
+Set FontSize 22
+Set Width 1200
+Set Height 500
+Set Padding 28
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 45ms
 Set Framerate 24
@@ -33,7 +33,7 @@ Type "clear" Enter
 Show
 
 Sleep 500ms
-Type "npx @jinhyuk9714/red-handed@latest demo --detectors claim-vs-fail"
+Type "npx @jinhyuk9714/red-handed@latest demo --detectors claim-vs-fail --compact"
 Sleep 400ms
 Enter
 

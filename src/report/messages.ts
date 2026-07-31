@@ -103,7 +103,7 @@ const en: Locale = {
     gitOnlyNote: "diff only — no session transcript, so nothing here is certain.",
     sessionsScanned: "sessions scanned",
     demoNote: "A made-up session, so every check has something to show. None of this is your code.",
-    demoNoteFiltered: "A made-up session, showing the checks you asked for. None of this is your code.",
+    demoNoteFiltered: "A made-up session, showing the checks you asked for. None of it is your code.",
   },
   messages: {
     "no-verify.after-hook-failure": {
