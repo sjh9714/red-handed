@@ -21,8 +21,10 @@ async function run(args: string[]): Promise<string> {
 describe("--compact", () => {
   test("keeps the evidence, which is the part that can be checked", async () => {
     const out = await run(["demo", "--detectors", "claim-vs-fail", "--compact"]);
-    expect(out).toContain("06:01:34");
-    expect(out).toContain("06:07:50");
+    // Shape, not a literal clock reading: the report prints local time, so a
+    // hardcoded 06:07:50 passes in Seoul and fails in CI. Found exactly that way.
+    expect(out).toMatch(/\d{2}:\d{2}:\d{2}/);
+    expect((out.match(/\d{2}:\d{2}:\d{2}/g) ?? []).length).toBeGreaterThanOrEqual(3);
     expect(out).toContain("All 34 tests pass now");
     expect(out).toContain("Tests 1 failed | 33 passed (34)");
   });
@@ -65,7 +67,7 @@ describe("--compact", () => {
   test("works in Korean too", async () => {
     const out = await run(["demo", "--detectors", "claim-vs-fail", "--compact", "--lang", "ko"]);
     expect(out).toContain("검거");
-    expect(out).toContain("06:07:50");
+    expect(out).toMatch(/\d{2}:\d{2}:\d{2}/);
     expect(out).not.toContain("→ 확인할 것:");
   });
 
