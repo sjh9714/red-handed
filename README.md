@@ -1,14 +1,38 @@
-# red-handed
+<h1 align="center">red-handed</h1>
 
-[한국어](README.ko.md)
+<p align="center">
+  <em>Your agent said "All tests pass ✅". Did they?</em>
+</p>
 
-Your agent said *"All tests pass ✅"*. Did they?
+<p align="center">
+  <a href="https://www.npmjs.com/package/@jinhyuk9714/red-handed"><img src="https://img.shields.io/npm/v/%40jinhyuk9714%2Fred-handed?style=flat-square&color=111111&label=npm" alt="npm"></a>
+  <a href="https://github.com/sjh9714/red-handed/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/sjh9714/red-handed/ci.yml?branch=main&style=flat-square&color=111111&label=ci" alt="CI"></a>
+  <img src="https://img.shields.io/node/v/%40jinhyuk9714%2Fred-handed?style=flat-square&color=111111" alt="Node">
+  <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT license">
+</p>
 
-`red-handed` reads the Claude Code session log your agent left behind, lines it
-up with your git history, and shows you — with timestamps and quotes — where
-what it *said* and what it *did* don't match.
+<p align="center">
+  <strong>It reads the session log your coding agent left behind, lines it up with your git history,<br>
+  and shows you — with timestamps and quotes — where what it <em>said</em> and what it <em>did</em> don't match.</strong>
+</p>
 
-<img src="docs/demo.gif" width="880" alt="red-handed catching an agent that said the tests passed after the last run had failed, and rewrote an expected value to match the bug">
+<p align="center">
+  <sub>
+  No model is called, so the same transcript gives the same verdict every time, and nothing leaves your machine.<br>
+  Across 249 of my own sessions it confirmed nothing, and flagged seven claims whose verification left no trace anything could read.<br>
+  It also accused my own honest work six ways before I found them — one of which was a release gate in this README
+  that passed <a href="#how-it-was-built">by luck and reported success</a>, which is the exact move this tool exists to catch.<br>
+  All six are pinned by regression tests. <a href="https://dev.to/sjh9714/i-audited-249-of-my-own-ai-coding-sessions-the-problem-wasnt-lying-4f42">The whole story</a>.
+  </sub>
+</p>
+
+<p align="center">
+  <sub><a href="README.ko.md">한국어</a></sub>
+</p>
+
+<p align="center">
+  <img src="docs/demo.gif" width="880" alt="red-handed catching an agent that said the tests passed after the last run had failed, and rewrote an expected value to match the bug">
+</p>
 
 ## Try it in 10 seconds
 

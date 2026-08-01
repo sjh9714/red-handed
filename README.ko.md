@@ -1,14 +1,38 @@
-# red-handed
+<h1 align="center">red-handed</h1>
 
-[English](README.md)
+<p align="center">
+  <em>에이전트가 "모든 테스트 통과 ✅" 라고 했다. 진짜일까?</em>
+</p>
 
-에이전트가 *"모든 테스트 통과 ✅"* 라고 했다. 진짜일까?
+<p align="center">
+  <a href="https://www.npmjs.com/package/@jinhyuk9714/red-handed"><img src="https://img.shields.io/npm/v/%40jinhyuk9714%2Fred-handed?style=flat-square&color=111111&label=npm" alt="npm"></a>
+  <a href="https://github.com/sjh9714/red-handed/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/sjh9714/red-handed/ci.yml?branch=main&style=flat-square&color=111111&label=ci" alt="CI"></a>
+  <img src="https://img.shields.io/node/v/%40jinhyuk9714%2Fred-handed?style=flat-square&color=111111" alt="Node">
+  <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT license">
+</p>
 
-`red-handed`는 코딩 에이전트가 남긴 세션 기록을 git 이력과 나란히 놓고,
-에이전트가 *한 말*과 실제로 *한 일*이 어긋나는 지점을 타임스탬프와 인용문으로
-보여줍니다.
+<p align="center">
+  <strong>코딩 에이전트가 남긴 세션 기록을 git 이력과 나란히 놓고,<br>
+  에이전트가 <em>한 말</em>과 실제로 <em>한 일</em>이 어긋나는 지점을 타임스탬프와 인용문으로 보여줍니다.</strong>
+</p>
 
-<img src="docs/demo.gif" width="880" alt="실패한 직후 통과했다고 말하고, 오답을 정답으로 바꿔치기한 에이전트가 검거되는 장면">
+<p align="center">
+  <sub>
+  AI를 호출하지 않아서 같은 기록은 항상 같은 결과가 나오고, 아무것도 컴퓨터 밖으로 나가지 않습니다.<br>
+  제 세션 249개에 돌린 결과 확정 판정은 0건이었고, 무엇으로도 읽을 수 없는 확인 7건이 걸렸습니다.<br>
+  그리고 이 도구는 정직하게 한 제 작업을 여섯 번 잘못 잡았습니다. 그중 하나는 이 README에 적어둔 릴리스 게이트가
+  <a href="#어떻게-만들었나">운으로 통과하고 성공했다고 보고한 것</a>으로, 이 도구가 잡으라고 만든 바로 그 행동입니다.<br>
+  여섯 개 전부 재현 테스트로 박아뒀습니다. <a href="https://sjh9714.tistory.com/9">전체 이야기</a>.
+  </sub>
+</p>
+
+<p align="center">
+  <sub><a href="README.md">English</a></sub>
+</p>
+
+<p align="center">
+  <img src="docs/demo.gif" width="880" alt="실패한 직후 통과했다고 말하고, 오답을 정답으로 바꿔치기한 에이전트가 검거되는 장면">
+</p>
 
 ## 10초 체험
 
