@@ -17,7 +17,10 @@ npx @jinhyuk9714/red-handed@latest demo    # a made-up session — watch every c
 npx @jinhyuk9714/red-handed@latest  # then: audit your own latest Claude Code session
 ```
 
-No account, no config, no API key. Nothing leaves your machine.
+No account, no config, no API key. Your transcripts and your code never leave
+your machine — the audit calls no model and makes no network request of its own.
+(`npx` itself fetches the package from the npm registry, the way it does for
+anything else.)
 
 Or install it as a Claude Code plugin, and ask Claude directly whether the tests
 it just reported as passing actually ran:

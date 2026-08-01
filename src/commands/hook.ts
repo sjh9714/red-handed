@@ -15,11 +15,37 @@ import { join } from "node:path";
 const HOOK_COMMAND = "npx --yes @jinhyuk9714/red-handed@latest hook";
 const MARKER = "red-handed";
 
+/** Written into the entries this tool creates, so uninstall can find its own. */
+const INSTALLED_BY = "red-handed";
+
 interface HookEntry {
   type?: string;
   command?: string;
   timeout?: number;
+  /** Present on entries this tool wrote. Claude Code ignores what it does not know. */
+  installedBy?: string;
 }
+
+/**
+ * Whether this is the hook this tool installed — not merely one that mentions it.
+ *
+ * The first version matched the substring "red-handed" anywhere in the command,
+ * which also swept up a wrapper script called red-handed-notify.sh and a clone
+ * checked out at a path containing the name. Uninstalling one tool is not
+ * permission to delete another.
+ *
+ * Identity now comes from a property this tool writes, not from reading the
+ * command. That is the only way to tell `install-hook --local` apart from a hook
+ * someone wrote themselves pointing at their own build — the two commands are
+ * identical. The published command is still matched exactly, so hooks installed
+ * before this property existed are still recognised.
+ */
+function isOurs(entry: HookEntry | undefined): boolean {
+  if (!entry) return false;
+  if (entry.installedBy === INSTALLED_BY) return true;
+  return typeof entry.command === "string" && entry.command.trim() === HOOK_COMMAND;
+}
+
 
 interface HookGroup {
   hooks?: HookEntry[];
@@ -73,7 +99,7 @@ function stopGroups(settings: Settings): HookGroup[] {
 
 function containsHook(groups: HookGroup[]): boolean {
   return groups.some((group) =>
-    (Array.isArray(group?.hooks) ? group.hooks : []).some((h) => h?.command?.includes(MARKER)),
+    (Array.isArray(group?.hooks) ? group.hooks : []).some((h) => isOurs(h)),
   );
 }
 
@@ -138,7 +164,16 @@ export function installHook(claudeHome: string, options: { command?: string } = 
       ...(settings.hooks ?? {}),
       Stop: [
         ...stop,
-        { hooks: [{ type: "command", command: options.command ?? HOOK_COMMAND, timeout: 30 }] },
+        {
+          hooks: [
+            {
+              type: "command",
+              command: options.command ?? HOOK_COMMAND,
+              timeout: 30,
+              installedBy: INSTALLED_BY,
+            },
+          ],
+        },
       ],
     },
   };
@@ -157,7 +192,7 @@ export function uninstallHook(claudeHome: string): HookResult {
     .map((group) => ({
       ...group,
       hooks: (Array.isArray(group?.hooks) ? group.hooks : []).filter(
-        (h) => !h?.command?.includes(MARKER),
+        (h) => !isOurs(h),
       ),
     }))
     .filter((group) => group.hooks.length > 0);

@@ -199,3 +199,57 @@ describe("secrets are masked before anything is quoted", () => {
     expect(excerpt("npx vitest run test/cart.test.ts")).toBe("npx vitest run test/cart.test.ts");
   });
 });
+
+describe("uninstall-hook removes only what install-hook added", () => {
+  function homeWith(settings: unknown): string {
+    const home = mkdtempSync(join(tmpdir(), "rh-hook-scope-"));
+    writeFileSync(join(home, "settings.json"), JSON.stringify(settings, null, 2));
+    return home;
+  }
+
+  // Matching on the substring "red-handed" swept up anything that merely
+  // mentioned it — a wrapper script, a clone checked out at a path with the
+  // name in it, a hook someone wrote themselves. Uninstalling one tool is not
+  // permission to delete another.
+  test("leaves a user's own hook that merely mentions the name", async () => {
+    const mine = "bash /Users/me/scripts/red-handed-notify.sh";
+    const home = homeWith({
+      hooks: { Stop: [{ hooks: [{ type: "command", command: mine }] }] },
+    });
+
+    await run(["install-hook", "--claude-home", home]);
+    await run(["uninstall-hook", "--claude-home", home]);
+
+    const after = readFileSync(join(home, "settings.json"), "utf8");
+    expect(after).toContain(mine);
+    expect(after).not.toContain("@jinhyuk9714/red-handed@latest hook");
+  });
+
+  test("leaves a hook that runs a local build of this very repo", async () => {
+    const dev = "node /Users/me/projects/red-handed/dist/cli.js hook";
+    const home = homeWith({
+      hooks: { Stop: [{ hooks: [{ type: "command", command: dev }] }] },
+    });
+
+    await run(["install-hook", "--claude-home", home]);
+    await run(["uninstall-hook", "--claude-home", home]);
+
+    expect(readFileSync(join(home, "settings.json"), "utf8")).toContain(dev);
+  });
+
+  test("still removes the hook it installed", async () => {
+    const home = homeWith({ hooks: {} });
+    await run(["install-hook", "--claude-home", home]);
+    expect(readFileSync(join(home, "settings.json"), "utf8")).toContain("red-handed@latest hook");
+    await run(["uninstall-hook", "--claude-home", home]);
+    expect(readFileSync(join(home, "settings.json"), "utf8")).not.toContain("red-handed@latest hook");
+  });
+
+  test("reports not-installed when only someone else's hook mentions the name", async () => {
+    const home = homeWith({
+      hooks: { Stop: [{ hooks: [{ type: "command", command: "echo red-handed" }] }] },
+    });
+    const result = await run(["uninstall-hook", "--claude-home", home]);
+    expect(result.out).toMatch(/not installed/i);
+  });
+});
