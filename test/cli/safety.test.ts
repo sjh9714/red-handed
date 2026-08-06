@@ -82,7 +82,7 @@ describe("the cache never keeps an accusation alive after the code is gone", () 
 describe("a mistyped option is a usage error, not a clean audit", () => {
   test("an unknown detector name is rejected", async () => {
     const { repo, home } = cheatingProject();
-    const result = await run(["--cwd", repo, "--claude-home", home, "--detectors", "skip_only"]);
+    const result = await run(["audit", "--cwd", repo, "--claude-home", home, "--detectors", "skip_only"]);
     expect(result.code).toBe(2);
     expect(result.err).toContain("skip_only");
     expect(result.err).toContain("skip-only");
@@ -90,7 +90,7 @@ describe("a mistyped option is a usage error, not a clean audit", () => {
 
   test("a valid detector name is still accepted", async () => {
     const { repo, home } = cheatingProject();
-    const result = await run(["--cwd", repo, "--claude-home", home, "--detectors", "skip-only"]);
+    const result = await run(["audit", "--cwd", repo, "--claude-home", home, "--detectors", "skip-only"]);
     expect(result.code).toBe(1);
   });
 
@@ -105,6 +105,7 @@ describe("quiet mode still says something when it fails the build", () => {
   test("--quiet --fail-on suspicious explains why it exited non-zero", async () => {
     const { repo, home } = cheatingProject();
     const result = await run([
+      "audit",
       "--cwd",
       repo,
       "--claude-home",
@@ -124,7 +125,7 @@ describe("quiet mode still says something when it fails the build", () => {
     mkdirSync(projectDir, { recursive: true });
     session({ cwd: clean }).say("Renamed a module.").writeTo(projectDir);
 
-    const result = await run(["--cwd", clean, "--claude-home", home, "--quiet", "--json"]);
+    const result = await run(["audit", "--cwd", clean, "--claude-home", home, "--quiet", "--json"]);
     expect(() => JSON.parse(result.out)).not.toThrow();
   });
 });

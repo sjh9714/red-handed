@@ -13,11 +13,14 @@ Run the audit and report what it found. Nothing here needs to be installed first
 
 ## Running it
 
-Default — the most recent session for this directory:
+The most recent session for this directory:
 
 ```bash
-npx --yes @jinhyuk9714/red-handed@latest
+npx --yes @jinhyuk9714/red-handed@latest audit
 ```
+
+The subcommand is required. Running the tool bare counts thrown-away test
+results across the whole machine, which is a different question.
 
 Useful variations:
 

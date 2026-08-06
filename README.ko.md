@@ -1,7 +1,7 @@
 <h1 align="center">red-handed</h1>
 
 <p align="center">
-  <em>에이전트가 "모든 테스트 통과 ✅" 라고 했다. 진짜일까?</em>
+  <em>에이전트는 테스트를 돌린 다음 영수증을 버린다.</em>
 </p>
 
 <p align="center">
@@ -12,33 +12,64 @@
 </p>
 
 <p align="center">
-  <strong>코딩 에이전트가 남긴 세션 기록을 git 이력과 나란히 놓고,<br>
-  에이전트가 <em>한 말</em>과 실제로 <em>한 일</em>이 어긋나는 지점을 타임스탬프와 인용문으로 보여줍니다.</strong>
-</p>
-
-<p align="center">
-  <sub>
-  AI를 호출하지 않아서 같은 기록은 항상 같은 결과가 나오고, 아무것도 컴퓨터 밖으로 나가지 않습니다.<br>
-  제 세션 249개에 돌린 결과 확정 판정은 0건이었고, 무엇으로도 읽을 수 없는 확인 7건이 걸렸습니다.<br>
-  그리고 이 도구는 정직하게 한 제 작업을 여섯 번 잘못 잡았습니다. 그중 하나는 이 README에 적어둔 릴리스 게이트가
-  <a href="#어떻게-만들었나">운으로 통과하고 성공했다고 보고한 것</a>으로, 이 도구가 잡으라고 만든 바로 그 행동입니다.<br>
-  여섯 개 전부 재현 테스트로 박아뒀습니다. <a href="https://sjh9714.tistory.com/9">전체 이야기</a>.
-  </sub>
-</p>
-
-<p align="center">
   <sub><a href="README.md">English</a></sub>
 </p>
+
+```console
+$ npx @jinhyuk9714/red-handed@latest
+
+  Your agent ran the tests 609 times.
+  It shredded the result 257 of them.                   42%
+
+  227 of those it did to itself, piping the output
+  through tail, head or grep before anything could read it.
+
+    pnpm test 2>&1 | grep -E …                                 12
+    python3 -m unittest discover -s tests 2>&1 | tail -6        7
+
+  compare yours:  github.com/sjh9714/red-handed/issues/4
+  paste this:     42% shredded · 257 of 609 runs · 227 self-inflicted · vitest pytest
+```
+
+**당신 것은 몇 퍼센트인가요?** 나온 줄을 [이 스레드](https://github.com/sjh9714/red-handed/issues/4)에
+붙여주세요. 제 것은 42%인데, 이게 높은 건지 낮은 건지 저도 모릅니다.
+
+## 왜 결과가 사라지나
+
+에이전트는 테스트를 돌리고, 결과를 읽고, 다음 일로 넘어갑니다. 컨텍스트를 아끼려고 보통 이렇게 씁니다.
+
+```bash
+npx vitest run 2>&1 | tail -5
+```
+
+`tail -5`는 마지막 다섯 줄만 남기고 나머지를 버리는데, `Tests 33 passed` 같은 요약 줄이
+그 위에 있는 경우가 많습니다. **에이전트는 답을 봤습니다. 기록에는 안 남았을 뿐입니다.**
+
+그래서 나중에 아무도 확인할 수 없습니다. 당신도, 다음 세션도, 그 코드를 넘겨받을 사람도.
+결과를 버린 실행은 애초에 돌지 않은 실행과 구별되지 않습니다.
+
+## 감사도 합니다
+
+숫자는 누구나 받는 부분이고, 그 뒤에 원래 도구가 있습니다. 세션 기록을 git 상태와 나란히 놓고,
+에이전트가 *한 말*과 실제로 *한 일*이 어긋나는 지점을 타임스탬프와 인용문으로 보여주는 검사 아홉 개.
 
 <p align="center">
   <img src="docs/demo.gif" width="880" alt="실패한 직후 통과했다고 말하고, 오답을 정답으로 바꿔치기한 에이전트가 검거되는 장면">
 </p>
 
+제 세션 249개에 돌린 결과 확정 판정은 0건이었고, 무엇으로도 읽을 수 없는 확인 7건이 걸렸습니다.
+그리고 이 도구는 정직하게 한 제 작업을 여섯 번 잘못 잡았습니다. 그중 하나는 이 README에 적어둔
+릴리스 게이트가 [운으로 통과하고 성공했다고 보고한 것](#어떻게-만들었나)으로, 이 도구가 잡으라고
+만든 바로 그 행동입니다. 여섯 개 전부 재현 테스트로 박아뒀습니다.
+[전체 이야기](https://sjh9714.tistory.com/9).
+
+AI를 호출하지 않아서 같은 기록은 항상 같은 결과가 나오고, 아무것도 컴퓨터 밖으로 나가지 않습니다.
+
 ## 10초 체험
 
 ```bash
 npx @jinhyuk9714/red-handed@latest demo --lang ko   # 지어낸 세션 — 모든 검사가 걸리는 장면
-npx @jinhyuk9714/red-handed@latest     # 그다음: 내 최근 Claude Code 세션 감사
+npx @jinhyuk9714/red-handed@latest audit   # 그다음: 내 최근 Claude Code 세션 감사
 ```
 
 계정도, 설정도, API 키도 없습니다. 세션 기록과 코드는 컴퓨터 밖으로 나가지

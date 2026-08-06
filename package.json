@@ -1,7 +1,7 @@
 {
   "name": "@jinhyuk9714/red-handed",
-  "version": "0.1.9",
-  "description": "Audit what your coding agent actually did against what it said it did. Reads Claude Code session logs and your git state, cites evidence, calls no model.",
+  "version": "0.2.0",
+  "description": "Your agent ran the tests. Then it shredded the receipt. Counts how often the result never made it into the transcript, and audits the session against git.",
   "keywords": [
     "claude-code",
     "coding-agent",

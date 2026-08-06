@@ -1,7 +1,7 @@
 <h1 align="center">red-handed</h1>
 
 <p align="center">
-  <em>Your agent said "All tests pass ✅". Did they?</em>
+  <em>Your agent ran the tests. Then it shredded the receipt.</em>
 </p>
 
 <p align="center">
@@ -12,33 +12,71 @@
 </p>
 
 <p align="center">
-  <strong>It reads the session log your coding agent left behind, lines it up with your git history,<br>
-  and shows you — with timestamps and quotes — where what it <em>said</em> and what it <em>did</em> don't match.</strong>
-</p>
-
-<p align="center">
-  <sub>
-  No model is called, so the same transcript gives the same verdict every time, and nothing leaves your machine.<br>
-  Across 249 of my own sessions it confirmed nothing, and flagged seven claims whose verification left no trace anything could read.<br>
-  It also accused my own honest work six ways before I found them — one of which was a release gate in this README
-  that passed <a href="#how-it-was-built">by luck and reported success</a>, which is the exact move this tool exists to catch.<br>
-  All six are pinned by regression tests. <a href="https://dev.to/sjh9714/i-audited-249-of-my-own-ai-coding-sessions-the-problem-wasnt-lying-4f42">The whole story</a>.
-  </sub>
-</p>
-
-<p align="center">
   <sub><a href="README.ko.md">한국어</a></sub>
 </p>
+
+```console
+$ npx @jinhyuk9714/red-handed@latest
+
+  Your agent ran the tests 609 times.
+  It shredded the result 257 of them.                   42%
+
+  227 of those it did to itself, piping the output
+  through tail, head or grep before anything could read it.
+
+    pnpm test 2>&1 | grep -E …                                 12
+    python3 -m unittest discover -s tests 2>&1 | tail -6        7
+
+  compare yours:  github.com/sjh9714/red-handed/issues/4
+  paste this:     42% shredded · 257 of 609 runs · 227 self-inflicted · vitest pytest
+```
+
+**What is yours?** Post the line it gives you in
+[the thread](https://github.com/sjh9714/red-handed/issues/4). Mine is 42%. I
+have no idea whether that is high.
+
+## Why the result goes missing
+
+Your agent runs the tests, reads the result, and moves on. To keep its context
+small it usually writes something like this:
+
+```bash
+npx vitest run 2>&1 | tail -5
+```
+
+`tail -5` throws away everything above the last five lines, and `Tests 33 passed`
+is often one of them. The agent saw the answer. The transcript did not keep it.
+
+So later nobody can check. Not you, not the next session, not whoever inherits
+the code. A run whose result was thrown away is indistinguishable from a run
+that never happened.
+
+## It also audits, if you ask
+
+The count is the part everyone gets a number from. Behind it is the original
+tool: nine checks that line the session log up against your git state and report
+where what the agent *said* and what it *did* don't match, with timestamps and
+quotes.
 
 <p align="center">
   <img src="docs/demo.gif" width="880" alt="red-handed catching an agent that said the tests passed after the last run had failed, and rewrote an expected value to match the bug">
 </p>
 
+Across 249 of my own sessions it confirmed nothing, and flagged seven claims
+whose verification left no trace anything could read. It also accused my own
+honest work six ways before I found them, one of which was a release gate in
+this README that passed [by luck and reported success](#how-it-was-built) —
+the exact move this tool exists to catch. All six are pinned by regression
+tests. [The whole story](https://dev.to/sjh9714/i-audited-249-of-my-own-ai-coding-sessions-the-problem-wasnt-lying-4f42).
+
+No model is called, so the same transcript gives the same verdict every time,
+and nothing leaves your machine.
+
 ## Try it in 10 seconds
 
 ```bash
 npx @jinhyuk9714/red-handed@latest demo    # a made-up session — watch every check fire
-npx @jinhyuk9714/red-handed@latest  # then: audit your own latest Claude Code session
+npx @jinhyuk9714/red-handed@latest audit   # then: your own latest Claude Code session
 ```
 
 No account, no config, no API key. Your transcripts and your code never leave

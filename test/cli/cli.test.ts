@@ -57,7 +57,7 @@ function repoWithCheatingSession(): { repo: string; home: string } {
 describe("red-handed", () => {
   test("audits the current project and fails when something was caught", async () => {
     const { repo, home } = repoWithCheatingSession();
-    const result = await run(["--cwd", repo, "--claude-home", home]);
+    const result = await run(["audit", "--cwd", repo, "--claude-home", home]);
     expect(result.code).toBe(1);
     expect(result.out).toContain("CAUGHT");
     expect(result.out).toContain("test/cart.test.ts");
@@ -65,32 +65,33 @@ describe("red-handed", () => {
 
   test("writes machine-readable findings on request", async () => {
     const { repo, home } = repoWithCheatingSession();
-    const result = await run(["--cwd", repo, "--claude-home", home, "--json"]);
+    const result = await run(["audit", "--cwd", repo, "--claude-home", home, "--json"]);
     const parsed = JSON.parse(result.out) as { summary: { caught: number } };
     expect(parsed.summary.caught).toBeGreaterThan(0);
   });
 
   test("writes markdown on request", async () => {
     const { repo, home } = repoWithCheatingSession();
-    const result = await run(["--cwd", repo, "--claude-home", home, "--md"]);
+    const result = await run(["audit", "--cwd", repo, "--claude-home", home, "--md"]);
     expect(result.out).toContain("## red-handed");
   });
 
   test("speaks the language it is asked to", async () => {
     const { repo, home } = repoWithCheatingSession();
-    const result = await run(["--cwd", repo, "--claude-home", home, "--lang", "ko"]);
+    const result = await run(["audit", "--cwd", repo, "--claude-home", home, "--lang", "ko"]);
     expect(result.out).toContain("확인할 것");
   });
 
   test("can be told not to fail the command", async () => {
     const { repo, home } = repoWithCheatingSession();
-    const result = await run(["--cwd", repo, "--claude-home", home, "--fail-on", "never"]);
+    const result = await run(["audit", "--cwd", repo, "--claude-home", home, "--fail-on", "never"]);
     expect(result.code).toBe(0);
   });
 
   test("can run a single detector", async () => {
     const { repo, home } = repoWithCheatingSession();
     const result = await run([
+      "audit",
       "--cwd",
       repo,
       "--claude-home",
@@ -132,7 +133,7 @@ describe("red-handed", () => {
     const empty = mkdtempSync(join(tmpdir(), "rh-empty-"));
     const home = mkdtempSync(join(tmpdir(), "rh-home-empty-"));
     mkdirSync(join(home, "projects"), { recursive: true });
-    const result = await run(["--cwd", empty, "--claude-home", home]);
+    const result = await run(["audit", "--cwd", empty, "--claude-home", home]);
     expect(result.err).toMatch(/no session/i);
     expect(result.code).toBe(0);
   });
@@ -149,7 +150,7 @@ describe("red-handed", () => {
     execFileSync("git", ["commit", "-q", "-m", "initial"], { cwd: repo });
     writeFileSync(testFile, "it.only('works', () => {})\n");
 
-    const result = await run(["--cwd", repo, "--git-only"]);
+    const result = await run(["audit", "--cwd", repo, "--git-only"]);
     expect(result.out).toContain("SUSPICIOUS");
     expect(result.out).toContain("skip-only");
   });

@@ -6,6 +6,8 @@ import { audit } from "./commands/audit.js";
 import { demo } from "./commands/demo.js";
 import { installHook, uninstallHook } from "./commands/hook.js";
 import { stats } from "./commands/stats.js";
+import { countReceipts } from "./receipts.js";
+import { receiptsPayload, renderReceipts } from "./report/receipts.js";
 import { exitCodeFor, type FailOn } from "./report/exit-code.js";
 import { renderJson } from "./report/json.js";
 import { renderMarkdown } from "./report/markdown.js";
@@ -33,11 +35,12 @@ export interface CliIO {
 
 const HELP = `red-handed ${VERSION}
 
-  Audits what your coding agent actually did against what it said it did.
+  Your agent ran the tests. Then it shredded the receipt.
   Reads Claude Code session logs and your git state. Calls no model, sends nothing anywhere.
 
 Usage
-  red-handed [options]                audit the most recent session for this directory
+  red-handed                          count how many test results your agent threw away
+  red-handed audit [options]          check the latest session here for claims the record does not support
   red-handed demo                     see every check fire, on a made-up session
   red-handed stats [options]          add up findings across every session on this machine
   red-handed sessions [options]       list the sessions found for this directory
@@ -94,6 +97,7 @@ interface ParsedArgs {
 class UsageError extends Error {}
 
 const COMMANDS = new Set([
+  "receipts",
   "audit",
   "demo",
   "stats",
@@ -105,7 +109,7 @@ const COMMANDS = new Set([
 
 function parseArgs(argv: string[], env: Record<string, string | undefined>): ParsedArgs {
   const args: ParsedArgs = {
-    command: "audit",
+    command: "receipts",
     all: false,
     gitOnly: false,
     failOn: "caught",
@@ -299,6 +303,25 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
   const lang = args.lang ?? systemLang(env);
   const discover = args.claudeHome ? { claudeHome: args.claudeHome } : {};
 
+  if (args.command === "receipts") {
+    const report = await countReceipts({
+      ...discover,
+      onProgress:
+        args.format === "json"
+          ? undefined
+          : (done, total) => {
+              if (total > 40 && done % 25 === 0) io.err(`\r\u001b[2K  reading sessions ${done}/${total}`);
+            },
+    });
+    if (args.format !== "json") io.err("\r\u001b[2K");
+    io.out(
+      args.format === "json"
+        ? `${JSON.stringify(receiptsPayload(report), null, 2)}\n`
+        : renderReceipts(report, args.color),
+    );
+    return 0;
+  }
+
   if (args.command === "hook") {
     return runAsHook(io, lang);
   }
@@ -408,7 +431,7 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
       sessions = args.all ? found : found.slice(0, 1);
       if (found.length === 0) {
         io.err(
-          `no session log found for ${args.cwd}\nIf this project was written by another agent, try: red-handed --git-only\n`,
+          `no session log found for ${args.cwd}\nIf this project was written by another agent, try: red-handed audit --git-only\n`,
         );
         return 0;
       }
