@@ -70,19 +70,23 @@ flagged seven claims whose verification left no trace anything could read.
 
 ## Install as a plugin
 
-Ask Claude directly whether the tests it just reported as passing actually ran:
+Two lines, and after that there is nothing to remember:
 
 ```bash
 claude plugin marketplace add sjh9714/red-handed
 claude plugin install red-handed@red-handed
 ```
 
-That adds `/red-handed:audit` for this project and `/red-handed:history` for
-every session on the machine. The plugin registers no hooks and runs nothing on
-its own. See [Forget it is there](#forget-it-is-there) if you want the audit to
-happen automatically.
+Installing turns on two hooks. One removes the result-eating pipe from a test
+command just before it runs. One audits the session against git the moment it
+ends, and says something only when it caught something. You also get
+`/red-handed:audit` and `/red-handed:history` for asking Claude directly.
+Uninstalling the plugin turns both hooks off again.
 
-On Codex, Cursor, Gemini CLI and other agents, the same skills install with
+Not using the plugin? `npx @jinhyuk9714/red-handed@latest fix` and
+`install-hook` set the same two hooks up by hand.
+
+On Codex, Cursor, Gemini CLI and other agents, the skills install with
 [the skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash

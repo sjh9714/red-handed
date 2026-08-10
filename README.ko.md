@@ -66,16 +66,21 @@ npx @jinhyuk9714/red-handed@latest fix
 
 ## 플러그인으로 설치
 
-방금 "테스트 통과했다"고 한 그 말이 사실인지 Claude에게 직접 물어볼 수 있습니다:
+두 줄이면 끝이고, 그 뒤로는 외울 것이 없습니다.
 
 ```bash
 claude plugin marketplace add sjh9714/red-handed
 claude plugin install red-handed@red-handed
 ```
 
-`/red-handed:audit`(이 프로젝트)와 `/red-handed:history`(이 컴퓨터 전체)가 추가됩니다.
-플러그인 자체는 훅을 등록하지 않고 스스로 아무것도 실행하지 않습니다. 자동 감사를
-원하면 아래 `install-hook`을 쓰세요.
+설치하면 훅 두 개가 켜집니다. 하나는 테스트 명령이 실행되기 직전에 결과를 잘라내는
+파이프를 떼주고, 하나는 세션이 끝나는 순간 git과 대조해서 걸린 것이 있을 때만
+알려줍니다. "테스트 통과했다"는 말이 사실인지 직접 물어볼 수 있는
+`/red-handed:audit`와 `/red-handed:history`도 같이 들어옵니다.
+플러그인을 지우면 훅 두 개도 같이 꺼집니다.
+
+플러그인을 안 쓴다면 `npx @jinhyuk9714/red-handed@latest fix`와 `install-hook`으로
+같은 훅 두 개를 직접 설정할 수 있습니다.
 
 Codex, Cursor, Gemini CLI 같은 다른 에이전트에서는
 [skills CLI](https://github.com/vercel-labs/skills)로 같은 스킬을 설치할 수 있습니다.
