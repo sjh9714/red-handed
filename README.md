@@ -15,24 +15,12 @@
   <sub><a href="README.ko.md">한국어</a></sub>
 </p>
 
-```console
-$ npx @jinhyuk9714/red-handed@latest
-
-  Your agent ran the tests 609 times.
-  It shredded the result 257 of them.                   42%
-
-  227 of those it did to itself, piping the output
-  through tail, head or grep before anything could read it.
-
-    pnpm test 2>&1 | grep -E …                                 12
-    python3 -m unittest discover -s tests 2>&1 | tail -6        7
-
-  compare yours:  github.com/sjh9714/red-handed/issues/4
-  paste this:     42% shredded · 257 of 609 runs · 227 self-inflicted · vitest pytest
-```
+<p align="center">
+  <img src="docs/demo.gif" width="880" alt="Running npx @jinhyuk9714/red-handed. It counts 843 test runs, 413 with the result thrown away, and prints a one-line summary to paste">
+</p>
 
 **What is yours?** Post the line it gives you in
-[the thread](https://github.com/sjh9714/red-handed/issues/4). Mine is 42%. I
+[the thread](https://github.com/sjh9714/red-handed/issues/4). Mine is 49%. I
 have no idea whether that is high.
 
 ## Why the result goes missing
@@ -57,10 +45,6 @@ The count is the part everyone gets a number from. Behind it is the original
 tool: nine checks that line the session log up against your git state and report
 where what the agent *said* and what it *did* don't match, with timestamps and
 quotes.
-
-<p align="center">
-  <img src="docs/demo.gif" width="880" alt="red-handed catching an agent that said the tests passed after the last run had failed, and rewrote an expected value to match the bug">
-</p>
 
 Across 249 of my own sessions it confirmed nothing, and flagged seven claims
 whose verification left no trace anything could read. It also accused my own
@@ -96,6 +80,13 @@ That adds `/red-handed:audit` for this project and `/red-handed:history` for
 every session on the machine. The plugin registers no hooks and runs nothing on
 its own — see [Forget it is there](#forget-it-is-there) if you want the audit to
 happen automatically.
+
+On Codex, Cursor, Gemini CLI and other agents, the same skills install with
+[the skills CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add sjh9714/red-handed
+```
 
 ## The nine checks
 

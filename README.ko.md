@@ -15,24 +15,12 @@
   <sub><a href="README.md">English</a></sub>
 </p>
 
-```console
-$ npx @jinhyuk9714/red-handed@latest
-
-  Your agent ran the tests 609 times.
-  It shredded the result 257 of them.                   42%
-
-  227 of those it did to itself, piping the output
-  through tail, head or grep before anything could read it.
-
-    pnpm test 2>&1 | grep -E …                                 12
-    python3 -m unittest discover -s tests 2>&1 | tail -6        7
-
-  compare yours:  github.com/sjh9714/red-handed/issues/4
-  paste this:     42% shredded · 257 of 609 runs · 227 self-inflicted · vitest pytest
-```
+<p align="center">
+  <img src="docs/demo.gif" width="880" alt="npx @jinhyuk9714/red-handed 실행 장면. 테스트 843번 중 413번의 결과가 버려졌다고 세고, 붙여넣을 요약 한 줄을 출력한다">
+</p>
 
 **당신 것은 몇 퍼센트인가요?** 나온 줄을 [이 스레드](https://github.com/sjh9714/red-handed/issues/4)에
-붙여주세요. 제 것은 42%인데, 이게 높은 건지 낮은 건지 저도 모릅니다.
+붙여주세요. 제 것은 49%인데, 이게 높은 건지 낮은 건지 저도 모릅니다.
 
 ## 왜 결과가 사라지나
 
@@ -52,10 +40,6 @@ npx vitest run 2>&1 | tail -5
 
 숫자는 누구나 받는 부분이고, 그 뒤에 원래 도구가 있습니다. 세션 기록을 git 상태와 나란히 놓고,
 에이전트가 *한 말*과 실제로 *한 일*이 어긋나는 지점을 타임스탬프와 인용문으로 보여주는 검사 아홉 개.
-
-<p align="center">
-  <img src="docs/demo.gif" width="880" alt="실패한 직후 통과했다고 말하고, 오답을 정답으로 바꿔치기한 에이전트가 검거되는 장면">
-</p>
 
 제 세션 249개에 돌린 결과 확정 판정은 0건이었고, 무엇으로도 읽을 수 없는 확인 7건이 걸렸습니다.
 그리고 이 도구는 정직하게 한 제 작업을 여섯 번 잘못 잡았습니다. 그중 하나는 이 README에 적어둔
@@ -88,6 +72,13 @@ claude plugin install red-handed@red-handed
 `/red-handed:audit`(이 프로젝트)와 `/red-handed:history`(이 컴퓨터 전체)가 추가됩니다.
 플러그인 자체는 훅을 등록하지 않고 스스로 아무것도 실행하지 않습니다. 자동 감사를
 원하면 아래 `install-hook`을 쓰세요.
+
+Codex, Cursor, Gemini CLI 같은 다른 에이전트에서는
+[skills CLI](https://github.com/vercel-labs/skills)로 같은 스킬을 설치할 수 있습니다.
+
+```bash
+npx skills add sjh9714/red-handed
+```
 
 ## 검사 아홉 가지
 
