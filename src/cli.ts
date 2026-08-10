@@ -4,7 +4,7 @@ import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { audit } from "./commands/audit.js";
 import { demo } from "./commands/demo.js";
-import { installHook, uninstallHook } from "./commands/hook.js";
+import { installFix, installHook, uninstallFix, uninstallHook } from "./commands/hook.js";
 import { stats } from "./commands/stats.js";
 import { countReceipts } from "./receipts.js";
 import { receiptsPayload, renderReceipts } from "./report/receipts.js";
@@ -16,6 +16,7 @@ import { resolveLocale } from "./report/messages.js";
 import { allSessions, claudeHomeDir, sessionByIdOrPath, sessionsForCwd } from "./session/discover.js";
 import { DETECTORS } from "./detectors/index.js";
 import { renderCoverage } from "./report/coverage.js";
+import { renderFront } from "./report/front.js";
 import type { AuditReport, SessionInfo } from "./types.js";
 
 // Read from the manifest rather than kept as a second copy. The hand-written
@@ -35,17 +36,20 @@ export interface CliIO {
 
 const HELP = `red-handed ${VERSION}
 
-  Your agent ran the tests. Then it shredded the receipt.
+  Your agent said the tests pass. This checks that a test actually ran.
   Reads Claude Code session logs and your git state. Calls no model, sends nothing anywhere.
 
 Usage
-  red-handed                          count how many test results your agent threw away
+  red-handed                          how often "tests pass" had a real run behind it, machine-wide
   red-handed audit [options]          check the latest session here for claims the record does not support
-  red-handed demo                     see every check fire, on a made-up session
-  red-handed stats [options]          add up findings across every session on this machine
-  red-handed sessions [options]       list the sessions found for this directory
+  red-handed stats [options]          every unbacked claim on this machine, quoted, with timestamps
+  red-handed fix                      stop the agent cutting test output before it is recorded
+  red-handed unfix                    undo that
   red-handed install-hook             audit automatically when a session ends
   red-handed uninstall-hook           undo that
+  red-handed receipts                 count test runs whose result was thrown away
+  red-handed demo                     see every check fire, on a made-up session
+  red-handed sessions [options]       list the sessions found for this directory
 
 Options
   --session <id|path>   audit one specific session
@@ -97,6 +101,7 @@ interface ParsedArgs {
 class UsageError extends Error {}
 
 const COMMANDS = new Set([
+  "front",
   "receipts",
   "audit",
   "demo",
@@ -105,11 +110,13 @@ const COMMANDS = new Set([
   "hook",
   "install-hook",
   "uninstall-hook",
+  "fix",
+  "unfix",
 ]);
 
 function parseArgs(argv: string[], env: Record<string, string | undefined>): ParsedArgs {
   const args: ParsedArgs = {
-    command: "receipts",
+    command: "front",
     all: false,
     gitOnly: false,
     failOn: "caught",
@@ -302,6 +309,45 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
 
   const lang = args.lang ?? systemLang(env);
   const discover = args.claudeHome ? { claudeHome: args.claudeHome } : {};
+
+  if (args.command === "front") {
+    const result = await stats({
+      ...discover,
+      env,
+      useCache: !args.noCache,
+      onProgress:
+        args.format === "json"
+          ? undefined
+          : (done, total) => {
+              if (total > 40 && done % 25 === 0) io.err(`\r\u001b[2K  reading sessions ${done}/${total}`);
+            },
+    });
+    if (args.format !== "json") io.err("\r\u001b[2K");
+    if (args.format === "json") {
+      io.out(
+        `${JSON.stringify(
+          { sessions: result.sessionsScanned, ...result.coverage },
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      io.out(renderFront(result, lang, args.color));
+    }
+    return 0;
+  }
+
+  if (args.command === "fix" || args.command === "unfix") {
+    const home = claudeHomeDir({ claudeHome: args.claudeHome, env });
+    try {
+      const result = args.command === "fix" ? installFix(home, { env }) : uninstallFix(home, { env });
+      io.out(`${result.message}: ${result.path}\n`);
+      return 0;
+    } catch (error) {
+      io.err(`${error instanceof Error ? error.message : String(error)}\n`);
+      return 2;
+    }
+  }
 
   if (args.command === "receipts") {
     const report = await countReceipts({

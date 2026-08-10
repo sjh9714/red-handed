@@ -94,6 +94,8 @@ export interface StatsOptions extends DiscoverOptions {
   sinceMs?: number;
   useCache?: boolean;
   env?: Record<string, string | undefined>;
+  /** Called per session, so a cold first run does not look like a hang. */
+  onProgress?: (done: number, total: number) => void;
 }
 
 /** Counts what a session claimed and what stood behind each claim. */
@@ -147,7 +149,9 @@ export async function stats(options: StatsOptions = {}): Promise<StatsResult> {
   };
   const projects = new Map<string, ProjectTally>();
 
+  let done = 0;
   for (const session of sessions) {
+    options.onProgress?.((done += 1), sessions.length);
     const key = `${session.transcriptPath}:${session.sizeBytes}:${Math.round(session.mtimeMs)}`;
     let findings: Finding[];
     let coverage: SessionCoverage;

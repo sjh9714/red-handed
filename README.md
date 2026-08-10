@@ -1,7 +1,7 @@
 <h1 align="center">red-handed</h1>
 
 <p align="center">
-  <em>Your agent ran the tests. Then it shredded the receipt.</em>
+  <em>Your agent said the tests pass. This checks that a test actually ran.</em>
 </p>
 
 <p align="center">
@@ -16,35 +16,51 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" width="880" alt="Running npx @jinhyuk9714/red-handed. It counts 843 test runs, 413 with the result thrown away, and prints a one-line summary to paste">
+  <img src="docs/demo.gif" width="880" alt="Running npx @jinhyuk9714/red-handed. It reads 513 sessions, finds 183 claims that the tests pass, and shows that 9 of them had no run behind them">
 </p>
 
-**What is yours?** Post the line it gives you in
-[the thread](https://github.com/sjh9714/red-handed/issues/4). Mine is 49%. I
-have no idea whether that is high.
+One command:
 
-## Why the result goes missing
+```bash
+npx @jinhyuk9714/red-handed@latest
+```
 
-Your agent runs the tests, reads the result, and moves on. To keep its context
-small it usually writes something like this:
+On my machine it read 513 sessions. My agent said "tests pass" 183 times.
+9 of those times, nothing had run at all. **What does yours say?**
+
+It reads the Claude Code session logs already on your disk, plus your git
+state. No account, no API key, no model call. Nothing leaves your machine.
+
+## The run that was thrown away
+
+There is a second, quieter way a run goes missing. To save context, agents
+pipe test output through a filter:
 
 ```bash
 npx vitest run 2>&1 | tail -5
 ```
 
-`tail -5` throws away everything above the last five lines, and `Tests 33 passed`
-is often one of them. The agent saw the answer. The transcript did not keep it.
+`tail -5` keeps the last five lines, and `Tests 33 passed` is often above
+them. The run happened. The record kept nothing. On my machine 49% of test
+runs ended like that. `red-handed receipts` counts yours.
 
-So later nobody can check. Not you, not the next session, not whoever inherits
-the code. A run whose result was thrown away is indistinguishable from a run
-that never happened.
+You can stop it with one command:
+
+```bash
+npx @jinhyuk9714/red-handed@latest fix
+```
+
+That installs a small hook. When the agent is about to run a test command
+that ends in a result-eating pipe, the hook removes the pipe, so the result
+reaches the record. Test output is a few hundred characters at the median, so
+keeping it costs almost nothing. It never touches permissions, only the
+command text, and only for test commands. `unfix` removes it.
 
 ## It also audits, if you ask
 
-The count is the part everyone gets a number from. Behind it is the original
-tool: nine checks that line the session log up against your git state and report
-where what the agent *said* and what it *did* don't match, with timestamps and
-quotes.
+Behind the count is the original tool: nine checks that line the session log
+up against your git state and report where what the agent *said* and what it
+*did* don't match, with timestamps and quotes.
 
 Across 249 of my own sessions it confirmed nothing, and flagged seven claims
 whose verification left no trace anything could read. It also accused my own
@@ -157,11 +173,15 @@ could actually have loaded.
 ## Usage
 
 ```
-red-handed                        audit the most recent session for this directory
-red-handed --all                  audit every session for this directory
-red-handed --session <id|path>    audit one specific session
-red-handed --git-only             audit the diff instead, when there is no transcript
-red-handed stats                  add up findings across every session on this machine
+red-handed                        how often "tests pass" had a real run behind it
+red-handed audit                  audit the most recent session for this directory
+red-handed audit --all            audit every session for this directory
+red-handed audit --session <id>   audit one specific session
+red-handed audit --git-only       audit the diff instead, when there is no transcript
+red-handed stats                  every unbacked claim on this machine, quoted
+red-handed fix                    stop the agent cutting test output out of the record
+red-handed unfix                  undo that
+red-handed receipts               count test runs whose result was thrown away
 red-handed demo                   see every check fire, on a made-up session
 red-handed install-hook           audit automatically when a session ends
 ```

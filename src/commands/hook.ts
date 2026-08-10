@@ -6,9 +6,12 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // The @latest is load-bearing: npx cannot derive the bin of a scoped package
 // from a bare `npx @scope/name`, but resolves it correctly with a version tag.
@@ -201,5 +204,129 @@ export function uninstallHook(claudeHome: string): HookResult {
     path,
     `${JSON.stringify({ ...settings, hooks: { ...(settings.hooks ?? {}), Stop: cleaned } }, null, 2)}\n`,
   );
+  return { changed: true, message: "removed", path };
+}
+
+/** Marks the entries `fix` writes, so `unfix` removes those and nothing else. */
+const FIX_INSTALLED_BY = "red-handed-fix";
+
+function isOurFix(entry: HookEntry | undefined): boolean {
+  return entry?.installedBy === FIX_INSTALLED_BY;
+}
+
+function preToolUseGroups(settings: Settings): HookGroup[] {
+  const groups = settings.hooks?.PreToolUse;
+  return Array.isArray(groups) ? groups : [];
+}
+
+function containsFix(groups: HookGroup[]): boolean {
+  return groups.some((group) =>
+    (Array.isArray(group?.hooks) ? group.hooks : []).some((h) => isOurFix(h)),
+  );
+}
+
+/** Where the standalone hook script lives once installed. */
+function fixScriptPath(env: Record<string, string | undefined> = process.env): string {
+  return join(env.RED_HANDED_HOME ?? join(homedir(), ".red-handed"), "fix-pipes.mjs");
+}
+
+/**
+ * Stops the agent cutting test output before the result is recorded.
+ *
+ * Copies the standalone script next to the cache and registers it as a
+ * PreToolUse hook on Bash. The script runs on every shell command, so it must
+ * not go through npx: the copy is dependency free and starts in the time node
+ * takes to boot. It rewrites nothing but the command text, and never the
+ * permission decision.
+ */
+export function installFix(
+  claudeHome: string,
+  options: { scriptSource?: string; env?: Record<string, string | undefined> } = {},
+): HookResult {
+  const path = settingsPath(claudeHome);
+  const settings = readSettings(path);
+  const groups = preToolUseGroups(settings);
+  if (containsFix(groups)) return { changed: false, message: "already installed", path };
+
+  // Bundled, this file lives in dist/cli.js and the script is its sibling.
+  // Under the test runner it lives in src/commands/ and the sibling is the
+  // built copy in dist. Whichever exists is the one to install.
+  const source =
+    options.scriptSource ??
+    ["./fix-hook.js", "../../dist/fix-hook.js"]
+      .map((rel) => fileURLToPath(new URL(rel, import.meta.url)))
+      .find((p) => existsSync(p));
+  if (!source) {
+    throw new HookError("cannot find the built fix-hook script; run the build first");
+  }
+  const target = fixScriptPath(options.env);
+  try {
+    mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
+    copyFileSync(source, target);
+  } catch (error) {
+    throw new HookError(`cannot write ${target}: ${(error as Error).message}`);
+  }
+
+  try {
+    mkdirSync(claudeHome, { recursive: true });
+  } catch (error) {
+    throw new HookError(`cannot create ${claudeHome}: ${(error as Error).message}`);
+  }
+  backupOnce(path);
+
+  const updated: Settings = {
+    ...settings,
+    hooks: {
+      ...(settings.hooks ?? {}),
+      PreToolUse: [
+        ...groups,
+        {
+          matcher: "Bash",
+          hooks: [
+            {
+              type: "command",
+              command: `node "${target}"`,
+              timeout: 10,
+              installedBy: FIX_INSTALLED_BY,
+            },
+          ],
+        },
+      ],
+    },
+  };
+  writeAtomically(path, `${JSON.stringify(updated, null, 2)}\n`);
+  return { changed: true, message: "installed", path };
+}
+
+export function uninstallFix(
+  claudeHome: string,
+  options: { env?: Record<string, string | undefined> } = {},
+): HookResult {
+  const path = settingsPath(claudeHome);
+  const settings = readSettings(path);
+  const groups = preToolUseGroups(settings);
+  if (!containsFix(groups)) return { changed: false, message: "not installed", path };
+
+  backupOnce(path);
+  const cleaned = groups
+    .map((group) => ({
+      ...group,
+      hooks: (Array.isArray(group?.hooks) ? group.hooks : []).filter((h) => !isOurFix(h)),
+    }))
+    .filter((group) => group.hooks.length > 0);
+
+  writeAtomically(
+    path,
+    `${JSON.stringify(
+      { ...settings, hooks: { ...(settings.hooks ?? {}), PreToolUse: cleaned } },
+      null,
+      2,
+    )}\n`,
+  );
+  try {
+    rmSync(fixScriptPath(options.env), { force: true });
+  } catch {
+    // The hook entry is gone; a leftover script that nothing calls can stay.
+  }
   return { changed: true, message: "removed", path };
 }

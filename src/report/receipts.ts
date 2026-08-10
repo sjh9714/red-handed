@@ -38,6 +38,8 @@ export function renderReceipts(report: ReceiptsReport, color = true): string {
     for (const { command, count: n } of report.worstCommands) {
       out.push(`    ${c.dim(command.padEnd(56).slice(0, 56))} ${String(n).padStart(4)}`);
     }
+    out.push("");
+    out.push(`  stop this from today:  ${c.bold("red-handed fix")}`);
   }
 
   const frameworks = [...report.byFramework.entries()]

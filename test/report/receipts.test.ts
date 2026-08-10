@@ -1,3 +1,6 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { main } from "../../src/cli.js";
 import { commandShape, type ReceiptsReport } from "../../src/receipts.js";
@@ -106,12 +109,26 @@ describe("what appears on screen", () => {
 });
 
 describe("the front door", () => {
-  test("running with no arguments counts receipts rather than auditing", async () => {
-    // The default used to audit this project's latest session. Most people have
-    // nothing to find there, and a report about yourself is not worth a second
-    // run. This pins the change.
+  test("running with no arguments shows claims against runs, not an audit", async () => {
+    // The default screen answers one question in plain words: how often did
+    // "tests pass" have a real run behind it. This pins that a bare invocation
+    // lands there and nowhere else.
     let out = "";
     const code = await main(["--claude-home", "/nonexistent-for-this-test"], {
+      out: (t) => {
+        out += t;
+      },
+      err: () => {},
+      env: { NO_COLOR: "1", RED_HANDED_HOME: mkdtempSync(join(tmpdir(), "rh-front-")) },
+    });
+    expect(code).toBe(0);
+    expect(out).toContain("No Claude Code sessions found");
+    expect(out).not.toContain("CAUGHT");
+  });
+
+  test("receipts still counts when asked for by name", async () => {
+    let out = "";
+    const code = await main(["receipts", "--claude-home", "/nonexistent-for-this-test"], {
       out: (t) => {
         out += t;
       },
@@ -120,7 +137,6 @@ describe("the front door", () => {
     });
     expect(code).toBe(0);
     expect(out).toContain("No test runs found");
-    expect(out).not.toContain("CAUGHT");
   });
 
   test("audit is still there when asked for by name", async () => {

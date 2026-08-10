@@ -1,13 +1,18 @@
 {
   "name": "@jinhyuk9714/red-handed",
-  "version": "0.2.0",
-  "description": "Your agent ran the tests. Then it shredded the receipt. Counts how often the result never made it into the transcript, and audits the session against git.",
+  "version": "0.3.0",
+  "description": "Your agent said the tests pass. This checks that a test actually ran. Reads Claude Code session logs and git state locally, calls no model, and can stop the agent cutting test output out of the record.",
   "keywords": [
     "claude-code",
     "coding-agent",
     "audit",
     "tests",
-    "cli"
+    "testing",
+    "verification",
+    "hooks",
+    "agent",
+    "cli",
+    "developer-tools"
   ],
   "license": "MIT",
   "author": "JinHyuk Sung",
@@ -32,6 +37,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "node --experimental-strip-types src/cli.ts",
+    "pretest": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

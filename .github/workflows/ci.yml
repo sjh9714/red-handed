@@ -18,8 +18,9 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test
+      # Build first: the fix-hook tests execute the built standalone script.
       - run: npm run build
+      - run: npm test
 
       # The tool audits its own diff. If it cannot survive its own checks it has
       # no business running on anyone else's code.
