@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -107,6 +107,36 @@ describe("the standalone script", () => {
 
   test("garbage on stdin exits zero and says nothing", () => {
     expect(run("not json" as unknown)).toBe("");
+  });
+});
+
+describe("the plugin copy", () => {
+  test("the committed hook script is the built one", () => {
+    // The plugin runs hooks/fix-pipes.mjs straight from the checkout, because
+    // dist/ is not committed. If someone edits src/fix-hook.ts and forgets to
+    // build, the installed plugin would run stale logic. This pins the two
+    // files equal; the build itself keeps them so.
+    const built = readFileSync(join(__dirname, "..", "dist", "fix-hook.js"), "utf8");
+    const shipped = readFileSync(join(__dirname, "..", "hooks", "fix-pipes.mjs"), "utf8");
+    expect(shipped).toBe(built);
+  });
+
+  test("hooks.json points at files that exist and nothing that does not", () => {
+    const raw = readFileSync(join(__dirname, "..", "hooks", "hooks.json"), "utf8");
+    const parsed = JSON.parse(raw) as {
+      hooks: Record<string, Array<{ matcher?: string; hooks: Array<{ command: string }> }>>;
+    };
+    const commands = Object.values(parsed.hooks)
+      .flat()
+      .flatMap((group) => group.hooks.map((h) => h.command));
+    for (const command of commands) {
+      const local = /\$\{CLAUDE_PLUGIN_ROOT\}\/(\S+?)"/.exec(command);
+      if (local) {
+        expect(existsSync(join(__dirname, "..", local[1] as string))).toBe(true);
+      }
+    }
+    // The fix hook must be scoped to Bash; running it on every tool would be noise.
+    expect(parsed.hooks.PreToolUse?.[0]?.matcher).toBe("Bash");
   });
 });
 

@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "red-handed",
-      "description": "Reads this project's Claude Code session transcripts under ~/.claude/projects, lines them up against git, and reports where a claim is not supported by the record: tests reported as passing with no run behind them, an expected value rewritten to match a failure, a test switched off, an assertion replaced by one that cannot fail, a commit made past a rejecting hook. Local files only. Your transcripts and code never leave the machine; no telemetry, no model calls.",
+      "description": "Your agent said the tests pass. This checks that a test actually ran. Installing turns on two hooks: one keeps test results from being cut out of the record, one audits each session against git as it ends. Local files only, no model calls, no telemetry. Uninstalling removes both hooks.",
       "source": "./",
       "category": "observability"
     }
