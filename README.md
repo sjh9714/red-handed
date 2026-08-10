@@ -30,6 +30,8 @@ On my machine it read 518 sessions. My agent said "tests pass" 183 times.
 
 It reads the Claude Code session logs already on your disk, plus your git
 state. No account, no API key, no model call. Nothing leaves your machine.
+(`npx` itself fetches the package from the npm registry, the way it does for
+anything else.)
 
 ## The run that was thrown away
 
@@ -62,30 +64,13 @@ Behind the count is the original tool: nine checks that line the session log
 up against your git state and report where what the agent *said* and what it
 *did* don't match, with timestamps and quotes.
 
-Across 249 of my own sessions it confirmed nothing, and flagged seven claims
-whose verification left no trace anything could read. It also accused my own
-honest work six ways before I found them, one of which was a release gate in
-this README that passed [by luck and reported success](#how-it-was-built) —
-the exact move this tool exists to catch. All six are pinned by regression
-tests. [The whole story](https://dev.to/sjh9714/i-audited-249-of-my-own-ai-coding-sessions-the-problem-wasnt-lying-4f42).
+When I wrote this up I had 249 sessions. The audit confirmed nothing, and
+flagged seven claims whose verification left no trace anything could read.
+[The whole story](https://dev.to/sjh9714/i-audited-249-of-my-own-ai-coding-sessions-the-problem-wasnt-lying-4f42).
 
-No model is called, so the same transcript gives the same verdict every time,
-and nothing leaves your machine.
+## Install as a plugin
 
-## Try it in 10 seconds
-
-```bash
-npx @jinhyuk9714/red-handed@latest demo    # a made-up session — watch every check fire
-npx @jinhyuk9714/red-handed@latest audit   # then: your own latest Claude Code session
-```
-
-No account, no config, no API key. Your transcripts and your code never leave
-your machine — the audit calls no model and makes no network request of its own.
-(`npx` itself fetches the package from the npm registry, the way it does for
-anything else.)
-
-Or install it as a Claude Code plugin, and ask Claude directly whether the tests
-it just reported as passing actually ran:
+Ask Claude directly whether the tests it just reported as passing actually ran:
 
 ```bash
 claude plugin marketplace add sjh9714/red-handed
@@ -94,7 +79,7 @@ claude plugin install red-handed@red-handed
 
 That adds `/red-handed:audit` for this project and `/red-handed:history` for
 every session on the machine. The plugin registers no hooks and runs nothing on
-its own — see [Forget it is there](#forget-it-is-there) if you want the audit to
+its own. See [Forget it is there](#forget-it-is-there) if you want the audit to
 happen automatically.
 
 On Codex, Cursor, Gemini CLI and other agents, the same skills install with
@@ -152,18 +137,7 @@ counted as a pass. All five are fixed and each has a permanent regression test
 in `test/regression/false-accusations.test.ts`. If you find a sixth, that is the
 bug report I most want.
 
-You do not have to take my word for the rate. `red-handed stats` reads your own
-history and tells you what it found there:
-
-```
-194 sessions. Your agent said "tests pass" 94 times.
-   89  a test ran first
-    5  no test ran in that session at all
-```
-
-That is my machine. Yours will say something else.
-
-Running it on my own history is also where the sixth one turned up. A scoped
+Running it on my own history is where the sixth one turned up. A scoped
 `pytest tests/test_sync_cli.py` was followed by edits to a GitHub workflow and
 two `.tsx` files in a separate web app, and the tool called the claim stale. A
 Python test cannot import a `.tsx` file and a workflow is not what just ran, so
