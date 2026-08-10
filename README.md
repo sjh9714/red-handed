@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" width="880" alt="Running npx @jinhyuk9714/red-handed. It reads 518 sessions, finds 183 claims that the tests pass, and shows that 9 of them had no run behind them">
+  <img src="docs/demo.gif" width="880" alt="Running npx @jinhyuk9714/red-handed. It reads 518 sessions, finds 183 claims that the tests pass, and shows that 9 of them had no run it could read">
 </p>
 
 One command:
@@ -26,7 +26,7 @@ npx @jinhyuk9714/red-handed@latest
 ```
 
 On my machine it read 518 sessions. My agent said "tests pass" 183 times.
-9 of those times, nothing had run at all. **What does yours say?**
+9 of those times, there was no run it could read. **What does yours say?**
 
 It reads the Claude Code session logs already on your disk, plus your git
 state. No account, no API key, no model call. Nothing leaves your machine.

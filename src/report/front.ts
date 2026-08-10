@@ -64,7 +64,10 @@ export function renderFront(result: StatsResult, lang: string | undefined, color
 
   const rows: Array<[number, string, boolean]> = [
     [c.verifiedByARun, korean ? "진짜로 테스트가 돌았음" : "a test had actually run", false],
-    [c.noRunInSession, korean ? "아무것도 돌지 않았음" : "nothing had run at all", true],
+    // Not "nothing ran": on this corpus every one of these turned out to be a
+    // run whose result nothing could read. The claim is unbacked either way,
+    // but the smaller statement is the true one.
+    [c.noRunInSession, korean ? "읽을 수 있는 실행이 없었음" : "no run it could read", true],
     [c.lastRunHadFailed, korean ? "직전 실행은 실패였음" : "the run before it had failed", true],
   ];
   const width = Math.max(...rows.map(([n]) => String(n).length));
