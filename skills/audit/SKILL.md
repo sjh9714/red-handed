@@ -19,8 +19,9 @@ The most recent session for this directory:
 npx --yes @jinhyuk9714/red-handed@latest audit
 ```
 
-The subcommand is required. Running the tool bare counts thrown-away test
-results across the whole machine, which is a different question.
+The subcommand is required. Running the tool bare reports how often "tests
+pass" had a real run behind it across the whole machine, which is a different
+question.
 
 Useful variations:
 
