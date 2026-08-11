@@ -88,9 +88,9 @@ describe("a runner this tool does not know is not proof that nothing ran", () =>
   });
 
   test.each([
-    ["bundle exec rspec", "generic"],
-    ["rspec", "generic"],
-    ["./vendor/bin/phpunit", "generic"],
+    ["bundle exec rspec", "rspec"],
+    ["rspec", "rspec"],
+    ["./vendor/bin/phpunit", "phpunit"],
     ["tox", "generic"],
     ["./gradlew test", "generic"],
     ["./mvnw test", "generic"],

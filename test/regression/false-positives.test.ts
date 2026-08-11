@@ -70,9 +70,9 @@ describe("commands that merely contain a flag-like fragment", () => {
 describe("test runners this tool did not know", () => {
   test.each([
     ["make test", "generic"],
-    ["go test ./...", "generic"],
-    ["cargo test", "generic"],
-    ["python3 -m unittest discover", "generic"],
+    ["go test ./...", "gotest"],
+    ["cargo test", "cargo"],
+    ["python3 -m unittest discover", "unittest"],
     ["bash scripts/test.sh", "generic"],
     ["./scripts/run-tests.sh", "generic"],
     ["python3 tools/test_oss_ops.py", "generic"],

@@ -39,6 +39,12 @@ describe("what a person could post", () => {
       "jest",
       "mocha",
       "pytest",
+      "rspec",
+      "phpunit",
+      "unittest",
+      "gotest",
+      "cargo",
+      "tap",
       "generic",
     ]);
     expect(words.filter((w) => !allowed.has(w))).toEqual([]);

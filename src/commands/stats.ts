@@ -58,6 +58,14 @@ interface SessionCoverage {
   testRuns: number;
 }
 
+/**
+ * Bump this when detectors or parsers change what they can read. It is part of
+ * every cache key, so an upgrade recomputes old sessions instead of serving
+ * results from an analysis that no longer exists. Without it, adding a parser
+ * changed nothing for anyone with a warm cache, which is how an upgrade lies.
+ */
+const ANALYSIS_VERSION = 2;
+
 /** Everything stays on this machine; the cache is only there to make reruns instant. */
 function cachePath(env: Record<string, string | undefined> = process.env): string {
   return join(env.RED_HANDED_HOME ?? join(homedir(), ".red-handed"), "cache.json");
@@ -152,7 +160,7 @@ export async function stats(options: StatsOptions = {}): Promise<StatsResult> {
   let done = 0;
   for (const session of sessions) {
     options.onProgress?.((done += 1), sessions.length);
-    const key = `${session.transcriptPath}:${session.sizeBytes}:${Math.round(session.mtimeMs)}`;
+    const key = `v${ANALYSIS_VERSION}:${session.transcriptPath}:${session.sizeBytes}:${Math.round(session.mtimeMs)}`;
     let findings: Finding[];
     let coverage: SessionCoverage;
     const cached = cache.get(key);

@@ -35,11 +35,11 @@ const RUNNERS: Record<string, TestFramework> = {
   mocha: "mocha",
   pytest: "pytest",
   "py.test": "pytest",
-  unittest: "generic",
-  tap: "generic",
+  unittest: "unittest",
+  tap: "tap",
   ava: "generic",
-  rspec: "generic",
-  phpunit: "generic",
+  rspec: "rspec",
+  phpunit: "phpunit",
   behave: "generic",
   ctest: "generic",
   busted: "generic",
@@ -222,7 +222,9 @@ function matchSegment(
   if (subcommands) {
     const sub = tokens[index + 1];
     if (sub === undefined || !subcommands.includes(sub)) return null;
-    return { framework: "generic", filtered: hasFilterArgs(tokens.slice(index + 2)) };
+    const framework: TestFramework =
+      headBare === "go" ? "gotest" : headBare === "cargo" ? "cargo" : "generic";
+    return { framework, filtered: hasFilterArgs(tokens.slice(index + 2)) };
   }
 
   if (PACKAGE_MANAGERS.has(head)) {
@@ -246,7 +248,7 @@ function matchSegment(
   }
 
   if (head === "node" && tokens.slice(index).includes("--test")) {
-    return { framework: "generic", filtered: hasFilterArgs(tokens.slice(index + 1).filter((t) => t !== "--test")) };
+    return { framework: "tap", filtered: hasFilterArgs(tokens.slice(index + 1).filter((t) => t !== "--test")) };
   }
 
   while (index < tokens.length && WRAPPERS.has(tokens[index] as string)) index += 1;
@@ -412,11 +414,180 @@ function parseFailures(output: string): TestFailureDetail[] {
   });
 }
 
+function parseGoTest(output: string): ParsedOutput | null {
+  // A bare FAIL line on its own is not enough: some other tool's output could
+  // contain one, and a wrong "failed" is the costly mistake. Ask for at least
+  // one line only `go test` prints before believing anything.
+  const goMarker =
+    /^(?:--- (?:FAIL|PASS|SKIP): |=== RUN |ok\s+\S+\s+(?:[\d.]+s|\(cached\))|FAIL\s+\S+\s+[\d.]+s)/m;
+  if (!goMarker.test(output)) return null;
+
+  const failedTests = output.match(/^--- FAIL: /gm)?.length;
+  const passedTests = output.match(/^--- PASS: /gm)?.length;
+  const failLine = /^FAIL\s+\S+.*$/m.exec(output) ?? /^--- FAIL: .*$/m.exec(output);
+  if (failLine) {
+    return {
+      status: "failed",
+      passed: passedTests,
+      failed: failedTests,
+      failures: [],
+      summaryLine: failLine[0].trim(),
+    };
+  }
+  const okLines = [...output.matchAll(/^ok\s+\S+\s+(?:[\d.]+s|\(cached\)).*$/gm)];
+  const passLine = /^PASS\s*$/m.exec(output);
+  const last = okLines[okLines.length - 1] ?? passLine;
+  if (!last) return null;
+  return {
+    status: "passed",
+    passed: passedTests,
+    failed: failedTests ?? 0,
+    failures: [],
+    summaryLine: last[0].trim(),
+  };
+}
+
+function parseCargo(output: string): ParsedOutput | null {
+  // One line per target: unit tests, each integration test binary, doc tests.
+  const results = [...output.matchAll(/^test result: (ok|FAILED)\. (\d+) passed; (\d+) failed;.*$/gm)];
+  if (results.length === 0) return null;
+  let passed = 0;
+  let failed = 0;
+  let summary: string | undefined;
+  for (const match of results) {
+    passed += Number(match[2]);
+    failed += Number(match[3]);
+    if (match[1] === "FAILED" && !summary) summary = match[0].trim();
+  }
+  const line = summary ?? results[results.length - 1]?.[0].trim();
+  const status = statusFromCounts({ passed, failed });
+  if (!status) return null;
+  return { status, passed, failed, failures: [], summaryLine: line };
+}
+
+function parseRspec(output: string): ParsedOutput | null {
+  const rspec = /^(\d+) examples?, (\d+) failures?(?:, (\d+) pending)?.*$/m.exec(output);
+  if (rspec) {
+    const examples = Number(rspec[1]);
+    const failed = Number(rspec[2]);
+    const pending = rspec[3] ? Number(rspec[3]) : 0;
+    const status = failed > 0 ? "failed" : examples > 0 ? "passed" : "unknown";
+    return {
+      status,
+      passed: Math.max(examples - failed - pending, 0),
+      failed,
+      skipped: pending || undefined,
+      failures: [],
+      summaryLine: rspec[0].trim(),
+    };
+  }
+  // Minitest prints the same idea in different words, and rake test runs it.
+  const minitest = /^(\d+) runs, \d+ assertions, (\d+) failures, (\d+) errors(?:, (\d+) skips)?.*$/m.exec(output);
+  if (minitest) {
+    const runs = Number(minitest[1]);
+    const failed = Number(minitest[2]) + Number(minitest[3]);
+    const skipped = minitest[4] ? Number(minitest[4]) : 0;
+    const status = failed > 0 ? "failed" : runs > 0 ? "passed" : "unknown";
+    return {
+      status,
+      passed: Math.max(runs - failed - skipped, 0),
+      failed,
+      skipped: skipped || undefined,
+      failures: [],
+      summaryLine: minitest[0].trim(),
+    };
+  }
+  return null;
+}
+
+function parsePhpunit(output: string): ParsedOutput | null {
+  const ok = /^OK \((\d+) tests?, \d+ assertions?\)\s*$/m.exec(output);
+  if (ok) {
+    return { status: "passed", passed: Number(ok[1]), failed: 0, failures: [], summaryLine: ok[0].trim() };
+  }
+  const summary = /^Tests: (\d+), Assertions: \d+((?:, (?:Failures|Errors|Skipped|Incomplete|Risky|Warnings): \d+)*)\.\s*$/m.exec(output);
+  if (!summary) return null;
+  const tests = Number(summary[1]);
+  const detail = summary[2] ?? "";
+  const part = (label: string): number => {
+    const found = new RegExp(`${label}: (\\d+)`).exec(detail);
+    return found ? Number(found[1]) : 0;
+  };
+  const failed = part("Failures") + part("Errors");
+  const skipped = part("Skipped") + part("Incomplete");
+  const status = failed > 0 ? "failed" : tests > 0 ? "passed" : "unknown";
+  return {
+    status,
+    passed: Math.max(tests - failed - skipped, 0),
+    failed,
+    skipped: skipped || undefined,
+    failures: [],
+    summaryLine: summary[0].trim(),
+  };
+}
+
+function parseUnittest(output: string): ParsedOutput | null {
+  const ran = /^Ran (\d+) tests? in [\d.]+s\s*$/m.exec(output);
+  if (!ran) return null;
+  const tests = Number(ran[1]);
+  const failed = /^FAILED \(([^)]+)\)\s*$/m.exec(output);
+  if (failed) {
+    const part = (label: string): number => {
+      const found = new RegExp(`${label}=(\\d+)`).exec(failed[1] as string);
+      return found ? Number(found[1]) : 0;
+    };
+    const count = part("failures") + part("errors");
+    return {
+      status: "failed",
+      passed: Math.max(tests - count, 0),
+      failed: count,
+      failures: [],
+      summaryLine: `${ran[0].trim()}, ${failed[0].trim()}`,
+    };
+  }
+  const ok = /^OK(?: \(([^)]*)\))?\s*$/m.exec(output);
+  if (!ok) return null;
+  const skippedMatch = ok[1] ? /skipped=(\d+)/.exec(ok[1]) : null;
+  const skipped = skippedMatch ? Number(skippedMatch[1]) : 0;
+  return {
+    status: tests > 0 ? "passed" : "unknown",
+    passed: Math.max(tests - skipped, 0),
+    failed: 0,
+    skipped: skipped || undefined,
+    failures: [],
+    summaryLine: `${ran[0].trim()}, ${ok[0].trim()}`,
+  };
+}
+
+function parseTap(output: string): ParsedOutput | null {
+  // The shape node --test prints. Generic TAP from other tools stays unread
+  // rather than guessed at.
+  const tests = /^# tests (\d+)\s*$/m.exec(output);
+  const pass = /^# pass (\d+)\s*$/m.exec(output);
+  const fail = /^# fail (\d+)\s*$/m.exec(output);
+  if (!tests || (!pass && !fail)) return null;
+  const passed = pass ? Number(pass[1]) : undefined;
+  const failed = fail ? Number(fail[1]) : undefined;
+  const status = statusFromCounts({ passed, failed });
+  if (!status) return null;
+  const summaryLine = [tests[0], pass?.[0], fail?.[0]]
+    .filter(Boolean)
+    .map((l) => (l as string).replace(/^# /, "").trim())
+    .join(", ");
+  return { status, passed, failed, failures: [], summaryLine };
+}
+
 const PARSERS: Record<string, (output: string) => ParsedOutput | null> = {
   vitest: parseVitest,
   jest: parseJest,
   mocha: parseMocha,
   pytest: parsePytest,
+  gotest: parseGoTest,
+  cargo: parseCargo,
+  rspec: parseRspec,
+  phpunit: parsePhpunit,
+  unittest: parseUnittest,
+  tap: parseTap,
 };
 
 /**
@@ -424,7 +595,10 @@ const PARSERS: Record<string, (output: string) => ParsedOutput | null> = {
  * agents pipe their test commands, which hides the exit code.
  */
 export function parseTestOutput(output: string, framework: TestFramework): ParsedOutput {
-  const order = [framework, "vitest", "jest", "mocha", "pytest"].filter(
+  // The command's own runner goes first; after that, every parser gets a try.
+  // A `make test` that wraps pytest is a generic command with pytest output,
+  // and reading it beats labelling it unknown.
+  const order = [framework, ...Object.keys(PARSERS)].filter(
     (f, i, arr) => f !== "generic" && arr.indexOf(f) === i,
   );
   for (const candidate of order) {

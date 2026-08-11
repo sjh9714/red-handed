@@ -107,7 +107,18 @@ export type AgentAction =
   | HookAction
   | SessionMetaAction;
 
-export type TestFramework = "vitest" | "jest" | "mocha" | "pytest" | "generic";
+export type TestFramework =
+  | "vitest"
+  | "jest"
+  | "mocha"
+  | "pytest"
+  | "rspec"
+  | "phpunit"
+  | "unittest"
+  | "gotest"
+  | "cargo"
+  | "tap"
+  | "generic";
 /** "unknown" is exculpatory everywhere: a run we could not read is never a failure. */
 export type TestStatus = "passed" | "failed" | "unknown";
 

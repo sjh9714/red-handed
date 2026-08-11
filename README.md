@@ -202,11 +202,12 @@ to `settings.json.red-handed-backup` first. `uninstall-hook` removes it.
 ## Requirements
 
 Node 20 or newer. Claude Code session logs are read from `~/.claude/projects`.
-Test output is parsed for vitest, jest, mocha and pytest. Runs are recognised for
-rspec, phpunit, tox, ctest and friends, plus `make test`, `go test`, `cargo test`,
-`./gradlew test`, `./mvnw verify`, `bundle exec`, and project scripts named like
-tests — recognised means a claim about them stays honest, even where the output
-format is not parsed.
+Test output is parsed for vitest, jest, mocha, pytest, rspec, minitest, phpunit,
+python unittest, `go test`, `cargo test` and `node --test`. Runs are also
+recognised for tox, ctest and friends, plus `make test`, `./gradlew test`,
+`./mvnw verify`, `bundle exec`, and project scripts named like tests.
+Recognised means a claim about them stays honest, even where the output format
+is not parsed yet.
 
 ## How it was built
 

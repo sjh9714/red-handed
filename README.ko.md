@@ -173,10 +173,11 @@ red-handed install-hook           세션이 끝날 때마다 자동 감사
 ## 요구사항
 
 Node 20 이상. 세션 로그는 `~/.claude/projects`에서 읽습니다. 테스트 출력 파싱은
-vitest, jest, mocha, pytest를 지원하고, rspec·phpunit·tox·ctest와 `make test`,
-`go test`, `cargo test`, `./gradlew test`, `bundle exec`, 테스트처럼 이름 붙은
-프로젝트 스크립트도 실행 자체는 인식합니다 — 출력을 못 읽는 러너라도 그에 대한
-주장을 "검거"로 넘기지 않는다는 뜻입니다.
+vitest, jest, mocha, pytest, rspec, minitest, phpunit, 파이썬 unittest,
+`go test`, `cargo test`, `node --test`를 지원합니다. tox·ctest와 `make test`,
+`./gradlew test`, `bundle exec`, 테스트처럼 이름 붙은 프로젝트 스크립트도 실행
+자체는 인식합니다. 출력을 아직 못 읽는 러너라도 그에 대한 주장을 "검거"로
+넘기지 않는다는 뜻입니다.
 
 ## 어떻게 만들었나
 

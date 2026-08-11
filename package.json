@@ -1,6 +1,6 @@
 {
   "name": "@jinhyuk9714/red-handed",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Your agent said the tests pass. This checks that a test actually ran. Reads Claude Code session logs and git state locally, calls no model, and can stop the agent cutting test output out of the record.",
   "keywords": [
     "claude-code",
